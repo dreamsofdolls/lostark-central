@@ -11,15 +11,8 @@ Phase 1 migration tu `Lostark-helper-master` (Angular/Nx) sang Next.js de deploy
   - `/checklist`
   - `/roster`
   - `/tasks-manager`
-  - `/gold-planner`
   - `/friends`
-  - `/party-planner`
-  - `/mari-optimizer`
-  - `/honing-cost-optimizer`
-  - `/gearsets`
-  - `/engraving-search`
   - `/settings`
-  - `/other-tools`
 
 ## Da migrate trong phase 2 (hien tai)
 
