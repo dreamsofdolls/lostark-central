@@ -6,7 +6,7 @@ export default function HomePage() {
     <>
       <div className="header">
         <h1>Lost Ark Central</h1>
-        <span>Next.js migration - phase 1</span>
+        <span>Next.js migration - phase 2</span>
       </div>
       <section className="card">
         <p>
