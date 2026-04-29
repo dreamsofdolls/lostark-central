@@ -36,7 +36,7 @@ const rawTasks: Omit<LostarkTask, "id">[] = [
     daysFilter: [2, 5, 0],
     canEditDaysFilter: false
   }),
-  createTask("Solo Shop", 302, "WEEKLY", "CHARACTER", 3, 9999, "weekly.webp"),
+  createTask("Solo Shop", 302, "WEEKLY", "CHARACTER", 1, 9999, "weekly.webp"),
   createTask("Paradise", 1580, "WEEKLY", "CHARACTER", 5, 9999, "weekly.webp"),
   createTask("Howl's Hourglass", 1730, "WEEKLY", "CHARACTER", 1, 9999, "weekly.webp"),
   createTask("Armoche", 1700, "WEEKLY", "CHARACTER", 2, 9999, "kazeros-raid.webp"),
