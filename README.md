@@ -21,6 +21,15 @@ Phase 1 migration tu `Lostark-helper-master` (Angular/Nx) sang Next.js de deploy
   - `/settings`
   - `/other-tools`
 
+## Da migrate trong phase 2 (hien tai)
+
+- `/roster`: quan ly character (them/sua/xoa, lazy, hidden, weekly gold, show-all-tasks).
+- `/checklist`: port logic checklist core:
+  - Daily/weekly/bi-weekly reset countdown.
+  - Group task theo tan suat + scope (character/roster).
+  - Danh dau tien do task, reset task, Ctrl+Click de complete nhanh.
+  - Luu trang thai bang localStorage (roster + completion).
+
 ## Chay local
 
 ```bash
