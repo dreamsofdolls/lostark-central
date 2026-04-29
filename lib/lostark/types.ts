@@ -41,3 +41,10 @@ export type CompletionEntry = {
 };
 
 export type CompletionMap = Record<string, CompletionEntry>;
+
+export type SettingsState = {
+  region: "EU" | "NA" | "KR";
+  hiddenOnCompletion: boolean;
+  showHiddenCharacters: boolean;
+  lazyTrackingEnabled: boolean;
+};

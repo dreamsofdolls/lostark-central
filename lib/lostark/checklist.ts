@@ -44,7 +44,8 @@ export function getDoneAmount(
   dailyReset: number,
   weeklyReset: number,
   biWeeklyReset: number,
-  biWeeklyOffsetReset: number
+  biWeeklyOffsetReset: number,
+  lazyTrackingEnabled = true
 ): number {
   const key = getCompletionEntryKey(character, task);
   const entry = completion[key];
@@ -57,7 +58,7 @@ export function getDoneAmount(
   }
 
   let resetBoundary = getTaskResetBoundary(task, dailyReset, weeklyReset, biWeeklyReset, biWeeklyOffsetReset);
-  if (character.lazy && task.scope === "CHARACTER") {
+  if (lazyTrackingEnabled && character.lazy && task.scope === "CHARACTER") {
     resetBoundary -= 2 * 24 * 60 * 60 * 1000;
   }
   if (entry.updated < resetBoundary) {

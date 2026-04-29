@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { ToolPage } from "@/components/ToolPage";
 import { ChecklistClient } from "@/components/checklist/ChecklistClient";
 import { RosterClient } from "@/components/roster/RosterClient";
+import { TasksManagerClient } from "@/components/tasks/TasksManagerClient";
+import { SettingsClient } from "@/components/settings/SettingsClient";
 import { toolRoutes } from "@/lib/routes";
 
 type ToolPageParams = {
@@ -23,6 +25,14 @@ export default function LostArkToolPage({ params }: ToolPageParams) {
 
   if (params.tool === "roster") {
     return <RosterClient />;
+  }
+
+  if (params.tool === "tasks-manager") {
+    return <TasksManagerClient />;
+  }
+
+  if (params.tool === "settings") {
+    return <SettingsClient />;
   }
 
   const route = toolRoutes.find((item) => item.href === `/${params.tool}`);

@@ -141,7 +141,9 @@ a {
 }
 
 .checklist-page,
-.roster-page {
+.roster-page,
+.tasks-page,
+.settings-page {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -228,6 +230,9 @@ a {
 
 .form-grid input[type="text"],
 .form-grid input[type="number"],
+.form-grid select,
+.tasks-toolbar input,
+.settings-grid select,
 .roster-page input[type="number"],
 .roster-page input[type="text"],
 .roster-page input:not([type]) {
@@ -242,6 +247,21 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.tasks-toolbar {
+  display: flex;
+  gap: 12px;
+}
+
+.tasks-toolbar input {
+  flex: 1;
+}
+
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 @media (max-width: 960px) {

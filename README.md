@@ -30,6 +30,16 @@ Phase 1 migration tu `Lostark-helper-master` (Angular/Nx) sang Next.js de deploy
   - Danh dau tien do task, reset task, Ctrl+Click de complete nhanh.
   - Luu trang thai bang localStorage (roster + completion).
 
+## Da migrate trong phase 3
+
+- `/tasks-manager`: quan ly task tu localStorage (them moi, bat/tat, xoa, reset ve default, tim kiem).
+- `/settings`: cau hinh behavior checklist (hide completed, show hidden characters, lazy tracking, region).
+- Data layer chung:
+  - `tasks`, `settings`, `roster`, `completion` dung key rieng va co migration version.
+- `/checklist` da duoc noi voi data layer moi:
+  - Doc task tu tasks-manager.
+  - Ap dung settings cho hide completed + hidden character + lazy tracking.
+
 ## Chay local
 
 ```bash

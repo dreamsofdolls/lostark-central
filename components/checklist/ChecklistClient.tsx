@@ -2,9 +2,17 @@
 
 import { MouseEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { defaultTasks } from "@/lib/lostark/defaultTasks";
-import { Character, CompletionMap, LostarkTask } from "@/lib/lostark/types";
-import { defaultRosterState, readCompletionMap, readRosterState, writeCompletionMap } from "@/lib/lostark/storage";
+import { Character, CompletionMap, LostarkTask, SettingsState } from "@/lib/lostark/types";
+import {
+  defaultRosterState,
+  defaultSettingsState,
+  readCompletionMap,
+  readRosterState,
+  readSettingsState,
+  readTasksState,
+  writeCompletionMap,
+  writeSettingsState
+} from "@/lib/lostark/storage";
 import { getCompletionEntryKey, getDoneAmount, isTaskAvailable, getTaskResetBoundary } from "@/lib/lostark/checklist";
 import {
   getLastBiWeeklyOffsetReset,
@@ -70,19 +78,23 @@ function getSectionKey(task: LostarkTask): SectionKey {
 export function ChecklistClient() {
   const [roster, setRoster] = useState(defaultRosterState);
   const [completion, setCompletion] = useState<CompletionMap>({});
-  const [showHiddenCharacters, setShowHiddenCharacters] = useState(false);
-  const [hideCompleted, setHideCompleted] = useState(false);
+  const [tasks, setTasks] = useState<LostarkTask[]>([]);
+  const [settings, setSettings] = useState<SettingsState>(defaultSettingsState);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     setRoster(readRosterState());
     setCompletion(readCompletionMap());
+    setTasks(readTasksState());
+    setSettings(readSettingsState());
   }, []);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
       setNow(Date.now());
       setRoster(readRosterState());
+      setTasks(readTasksState());
+      setSettings(readSettingsState());
     }, 1000);
     return () => {
       window.clearInterval(interval);
@@ -95,8 +107,8 @@ export function ChecklistClient() {
   const biWeeklyOffsetReset = getLastBiWeeklyOffsetReset(now);
 
   const visibleCharacters = useMemo(
-    () => roster.characters.filter((character) => showHiddenCharacters || !character.isHide),
-    [roster.characters, showHiddenCharacters]
+    () => roster.characters.filter((character) => settings.showHiddenCharacters || !character.isHide),
+    [roster.characters, settings.showHiddenCharacters]
   );
 
   const rowsBySection = useMemo(() => {
@@ -111,7 +123,9 @@ export function ChecklistClient() {
       oneTimeRoster: []
     };
 
-    const eligibleTasks = defaultTasks.filter((task) =>
+    const eligibleTasks = tasks.filter(
+      (task) =>
+        task.enabled &&
       roster.characters.some(
         (character) => character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY)
       )
@@ -129,11 +143,21 @@ export function ChecklistClient() {
                 dailyReset,
                 weeklyReset,
                 biWeeklyReset,
-                biWeeklyOffsetReset
+                biWeeklyOffsetReset,
+                settings.lazyTrackingEnabled
               )
             ]
           : visibleCharacters.map((character) =>
-              getDoneAmount(task, character, completion, dailyReset, weeklyReset, biWeeklyReset, biWeeklyOffsetReset)
+              getDoneAmount(
+                task,
+                character,
+                completion,
+                dailyReset,
+                weeklyReset,
+                biWeeklyReset,
+                biWeeklyOffsetReset,
+                settings.lazyTrackingEnabled
+              )
             );
 
       const allDone =
@@ -150,7 +174,7 @@ export function ChecklistClient() {
             });
 
       const shouldHideByAvailability = !available && task.canEditDaysFilter;
-      if ((allDone && hideCompleted) || (shouldHideByAvailability && !roster.showAllTasks)) {
+      if ((allDone && settings.hiddenOnCompletion) || (shouldHideByAvailability && !roster.showAllTasks)) {
         continue;
       }
 
@@ -164,16 +188,8 @@ export function ChecklistClient() {
 
     return next;
   }, [
-    biWeeklyOffsetReset,
-    biWeeklyReset,
-    completion,
-    dailyReset,
-    hideCompleted,
-    now,
-    roster.characters,
-    roster.showAllTasks,
-    visibleCharacters,
-    weeklyReset
+    biWeeklyOffsetReset, biWeeklyReset, completion, dailyReset, now, roster.characters, roster.showAllTasks, settings.hiddenOnCompletion,
+    settings.lazyTrackingEnabled, tasks, visibleCharacters, weeklyReset
   ]);
 
   function updateCompletion(
@@ -229,6 +245,14 @@ export function ChecklistClient() {
     );
   }
 
+  function updateSettings(patch: Partial<SettingsState>) {
+    setSettings((previous) => {
+      const next = { ...previous, ...patch };
+      writeSettingsState(next);
+      return next;
+    });
+  }
+
   return (
     <div className="checklist-page">
       <div className="header">
@@ -247,16 +271,22 @@ export function ChecklistClient() {
           <label>
             <input
               type="checkbox"
-              checked={showHiddenCharacters}
-              onChange={(event) => setShowHiddenCharacters(event.currentTarget.checked)}
+              checked={settings.showHiddenCharacters}
+              onChange={(event) => {
+                const { checked } = event.currentTarget;
+                updateSettings({ showHiddenCharacters: checked });
+              }}
             />{" "}
             Show hidden characters
           </label>
           <label>
             <input
               type="checkbox"
-              checked={hideCompleted}
-              onChange={(event) => setHideCompleted(event.currentTarget.checked)}
+              checked={settings.hiddenOnCompletion}
+              onChange={(event) => {
+                const { checked } = event.currentTarget;
+                updateSettings({ hiddenOnCompletion: checked });
+              }}
             />{" "}
             Hide completed tasks
           </label>
