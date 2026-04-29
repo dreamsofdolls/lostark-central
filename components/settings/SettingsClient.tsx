@@ -45,52 +45,59 @@ export function SettingsClient() {
 
   return (
     <div className="settings-page">
-      <div className="header">
-        <h1>Settings</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Settings</h1>
       </div>
-      <section className="card">
-        <h2>Task tracking</h2>
+      <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/80 shadow-xl">
+        <div className="border-b border-zinc-800 px-5 py-4">
+          <h2 className="text-lg font-semibold">Task tracking</h2>
+          <p className="mt-1 text-sm text-zinc-400">Bat/tat tracking theo tung character cho checklist.</p>
+        </div>
         {characterNames.length === 0 ? (
-          <p>Chua co character trong roster.</p>
+          <p className="p-5 text-sm text-zinc-400">Chua co character trong roster.</p>
         ) : (
-          <table className="checklist-table">
-            <thead>
-              <tr>
-                <th>Task</th>
-                {characterNames.map((name) => (
-                  <th key={name}>{name}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {trackingRows.map((row) => (
-                <tr key={row.task.id}>
-                  <td>{row.task.label}</td>
-                  {row.cells.map((cell) => (
-                    <td key={`${row.task.id}-${cell.name}`}>
-                      {cell.tracked ? (
-                        <button
-                          type="button"
-                          className="task-btn"
-                          onClick={() => setTracking(cell.name, row.task.id, false)}
-                        >
-                          On (Tracked)
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="task-btn reset"
-                          onClick={() => setTracking(cell.name, row.task.id, true)}
-                        >
-                          Off (Ignored)
-                        </button>
-                      )}
-                    </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-zinc-950/60 text-zinc-400">
+                <tr>
+                  <th className="border-b border-zinc-800 px-4 py-3 text-left">Task</th>
+                  {characterNames.map((name) => (
+                    <th key={name} className="border-b border-zinc-800 px-4 py-3 text-center">
+                      {name}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {trackingRows.map((row) => (
+                  <tr key={row.task.id} className="border-b border-zinc-800/80 last:border-b-0">
+                    <td className="px-4 py-3 text-zinc-100">{row.task.label}</td>
+                    {row.cells.map((cell) => (
+                      <td key={`${row.task.id}-${cell.name}`} className="px-4 py-3 text-center">
+                        <button
+                          type="button"
+                          aria-pressed={cell.tracked}
+                          className={`relative inline-flex h-8 w-28 items-center rounded-full px-1 transition ${
+                            cell.tracked ? "bg-emerald-600/90" : "bg-zinc-700"
+                          }`}
+                          onClick={() => setTracking(cell.name, row.task.id, !cell.tracked)}
+                        >
+                          <span
+                            className={`h-6 w-6 rounded-full bg-white shadow transition ${
+                              cell.tracked ? "translate-x-0" : "translate-x-[76px]"
+                            }`}
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-white">
+                            {cell.tracked ? "On (Tracked)" : "Off (Ignored)"}
+                          </span>
+                        </button>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>
