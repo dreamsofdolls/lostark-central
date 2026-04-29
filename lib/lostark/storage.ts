@@ -6,7 +6,7 @@ const COMPLETION_KEY = "lostark-central:completion";
 const TASKS_KEY = "lostark-central:tasks";
 const SETTINGS_KEY = "lostark-central:settings";
 const DATA_VERSION_KEY = "lostark-central:data-version";
-const CURRENT_DATA_VERSION = 2;
+const CURRENT_DATA_VERSION = 3;
 
 export const defaultRosterState: RosterState = {
   characters: [],
@@ -40,7 +40,10 @@ function migrateStorageIfNeeded(): void {
     return;
   }
 
-  if (!window.localStorage.getItem(TASKS_KEY)) {
+  if (currentVersion < 3) {
+    // Phase preset update: enforce the reduced checklist set for all existing users.
+    window.localStorage.setItem(TASKS_KEY, JSON.stringify(defaultTasks));
+  } else if (!window.localStorage.getItem(TASKS_KEY)) {
     window.localStorage.setItem(TASKS_KEY, JSON.stringify(defaultTasks));
   }
   if (!window.localStorage.getItem(SETTINGS_KEY)) {
