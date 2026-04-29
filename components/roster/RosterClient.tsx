@@ -69,7 +69,10 @@ export function RosterClient() {
             Name
             <input
               value={form.name}
-              onChange={(event) => setForm((previous) => ({ ...previous, name: event.currentTarget.value }))}
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setForm((previous) => ({ ...previous, name: value }));
+              }}
             />
           </label>
           <label>
@@ -77,16 +80,20 @@ export function RosterClient() {
             <input
               type="number"
               value={form.ilvl}
-              onChange={(event) =>
-                setForm((previous) => ({ ...previous, ilvl: Number(event.currentTarget.value) || 0 }))
-              }
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setForm((previous) => ({ ...previous, ilvl: Number(value) || 0 }));
+              }}
             />
           </label>
           <label className="checkbox-label">
             <input
               type="checkbox"
               checked={form.lazy}
-              onChange={(event) => setForm((previous) => ({ ...previous, lazy: event.currentTarget.checked }))}
+              onChange={(event) => {
+                const { checked } = event.currentTarget;
+                setForm((previous) => ({ ...previous, lazy: checked }));
+              }}
             />
             Lazy tracking
           </label>
@@ -94,7 +101,10 @@ export function RosterClient() {
             <input
               type="checkbox"
               checked={form.weeklyGold}
-              onChange={(event) => setForm((previous) => ({ ...previous, weeklyGold: event.currentTarget.checked }))}
+              onChange={(event) => {
+                const { checked } = event.currentTarget;
+                setForm((previous) => ({ ...previous, weeklyGold: checked }));
+              }}
             />
             Weekly gold
           </label>
@@ -102,7 +112,10 @@ export function RosterClient() {
             <input
               type="checkbox"
               checked={Boolean(form.isHide)}
-              onChange={(event) => setForm((previous) => ({ ...previous, isHide: event.currentTarget.checked }))}
+              onChange={(event) => {
+                const { checked } = event.currentTarget;
+                setForm((previous) => ({ ...previous, isHide: checked }));
+              }}
             />
             Hidden
           </label>
@@ -117,7 +130,10 @@ export function RosterClient() {
           <input
             type="checkbox"
             checked={roster.showAllTasks}
-            onChange={(event) => save({ ...roster, showAllTasks: event.currentTarget.checked })}
+            onChange={(event) => {
+              const { checked } = event.currentTarget;
+              save({ ...roster, showAllTasks: checked });
+            }}
           />
           Show all tasks (including tasks unavailable today)
         </label>
@@ -147,30 +163,40 @@ export function RosterClient() {
                     <input
                       type="number"
                       value={character.ilvl}
-                      onChange={(event) =>
-                        updateCharacter(index, { ilvl: Number(event.currentTarget.value) || character.ilvl })
-                      }
+                      onChange={(event) => {
+                        const { value } = event.currentTarget;
+                        updateCharacter(index, { ilvl: Number(value) || character.ilvl });
+                      }}
                     />
                   </td>
                   <td>
                     <input
                       type="checkbox"
                       checked={character.lazy}
-                      onChange={(event) => updateCharacter(index, { lazy: event.currentTarget.checked })}
+                      onChange={(event) => {
+                        const { checked } = event.currentTarget;
+                        updateCharacter(index, { lazy: checked });
+                      }}
                     />
                   </td>
                   <td>
                     <input
                       type="checkbox"
                       checked={character.weeklyGold}
-                      onChange={(event) => updateCharacter(index, { weeklyGold: event.currentTarget.checked })}
+                      onChange={(event) => {
+                        const { checked } = event.currentTarget;
+                        updateCharacter(index, { weeklyGold: checked });
+                      }}
                     />
                   </td>
                   <td>
                     <input
                       type="checkbox"
                       checked={Boolean(character.isHide)}
-                      onChange={(event) => updateCharacter(index, { isHide: event.currentTarget.checked })}
+                      onChange={(event) => {
+                        const { checked } = event.currentTarget;
+                        updateCharacter(index, { isHide: checked });
+                      }}
                     />
                   </td>
                   <td>
