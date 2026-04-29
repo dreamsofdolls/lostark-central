@@ -6,7 +6,7 @@ const COMPLETION_KEY = "lostark-central:completion";
 const TASKS_KEY = "lostark-central:tasks";
 const SETTINGS_KEY = "lostark-central:settings";
 const DATA_VERSION_KEY = "lostark-central:data-version";
-const CURRENT_DATA_VERSION = 3;
+const CURRENT_DATA_VERSION = 4;
 
 export const defaultRosterState: RosterState = {
   characters: [],
@@ -14,10 +14,9 @@ export const defaultRosterState: RosterState = {
 };
 
 export const defaultSettingsState: SettingsState = {
-  region: "EU",
   hiddenOnCompletion: false,
-  showHiddenCharacters: false,
-  lazyTrackingEnabled: true
+  lazyTrackingEnabled: true,
+  taskTracking: {}
 };
 
 function safeParse<T>(raw: string | null, fallback: T): T {
@@ -118,10 +117,10 @@ export function readSettingsState(): SettingsState {
   migrateStorageIfNeeded();
   const parsed = safeParse<SettingsState>(window.localStorage.getItem(SETTINGS_KEY), defaultSettingsState);
   return {
-    region: parsed.region ?? "EU",
     hiddenOnCompletion: Boolean(parsed.hiddenOnCompletion),
-    showHiddenCharacters: Boolean(parsed.showHiddenCharacters),
-    lazyTrackingEnabled: parsed.lazyTrackingEnabled !== false
+    lazyTrackingEnabled: parsed.lazyTrackingEnabled !== false,
+    taskTracking:
+      parsed.taskTracking && typeof parsed.taskTracking === "object" ? parsed.taskTracking : {}
   };
 }
 

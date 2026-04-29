@@ -13,14 +13,16 @@ import {
   writeCompletionMap,
   writeSettingsState
 } from "@/lib/lostark/storage";
-import { getCompletionEntryKey, getDoneAmount, isTaskAvailable, getTaskResetBoundary } from "@/lib/lostark/checklist";
 import {
-  getLastBiWeeklyOffsetReset,
-  getLastBiWeeklyReset,
+  getCompletionEntryKey,
+  getDoneAmount,
+  getTrackingEntryKey,
+  isTaskAvailable,
+  getTaskResetBoundary
+} from "@/lib/lostark/checklist";
+import {
   getLastDailyReset,
   getLastWeeklyReset,
-  getNextBiWeeklyOffsetReset,
-  getNextBiWeeklyReset,
   getNextDailyReset,
   getNextWeeklyReset
 } from "@/lib/lostark/time";
@@ -30,8 +32,6 @@ type SectionKey =
   | "dailyRoster"
   | "weeklyCharacter"
   | "weeklyRoster"
-  | "biWeeklyCharacter"
-  | "biWeeklyRoster"
   | "oneTimeCharacter"
   | "oneTimeRoster";
 
@@ -39,6 +39,7 @@ type ChecklistRow = {
   task: LostarkTask;
   available: boolean;
   doneByCharacter: number[];
+  trackedByCharacter: boolean[];
   allDone: boolean;
 };
 
@@ -47,8 +48,6 @@ const sectionLabels: Record<SectionKey, string> = {
   dailyRoster: "Daily Roster",
   weeklyCharacter: "Weekly Character",
   weeklyRoster: "Weekly Roster",
-  biWeeklyCharacter: "Bi-Weekly Character",
-  biWeeklyRoster: "Bi-Weekly Roster",
   oneTimeCharacter: "One-Time Character",
   oneTimeRoster: "One-Time Roster"
 };
@@ -67,8 +66,8 @@ function getSectionKey(task: LostarkTask): SectionKey {
   const byFrequency = {
     DAILY: "daily",
     WEEKLY: "weekly",
-    BIWEEKLY: "biWeekly",
-    BIWEEKLY_OFFSET: "biWeekly",
+    BIWEEKLY: "weekly",
+    BIWEEKLY_OFFSET: "weekly",
     ONE_TIME: "oneTime"
   }[task.frequency];
   const byScope = task.scope === "CHARACTER" ? "Character" : "Roster";
@@ -103,12 +102,10 @@ export function ChecklistClient() {
 
   const dailyReset = getLastDailyReset(now);
   const weeklyReset = getLastWeeklyReset(now);
-  const biWeeklyReset = getLastBiWeeklyReset(now);
-  const biWeeklyOffsetReset = getLastBiWeeklyOffsetReset(now);
 
   const visibleCharacters = useMemo(
-    () => roster.characters.filter((character) => settings.showHiddenCharacters || !character.isHide),
-    [roster.characters, settings.showHiddenCharacters]
+    () => roster.characters.filter((character) => !character.isHide),
+    [roster.characters]
   );
 
   const rowsBySection = useMemo(() => {
@@ -117,8 +114,6 @@ export function ChecklistClient() {
       dailyRoster: [],
       weeklyCharacter: [],
       weeklyRoster: [],
-      biWeeklyCharacter: [],
-      biWeeklyRoster: [],
       oneTimeCharacter: [],
       oneTimeRoster: []
     };
@@ -142,8 +137,8 @@ export function ChecklistClient() {
                 completion,
                 dailyReset,
                 weeklyReset,
-                biWeeklyReset,
-                biWeeklyOffsetReset,
+                weeklyReset,
+                weeklyReset,
                 settings.lazyTrackingEnabled
               )
             ]
@@ -154,11 +149,18 @@ export function ChecklistClient() {
                 completion,
                 dailyReset,
                 weeklyReset,
-                biWeeklyReset,
-                biWeeklyOffsetReset,
+                weeklyReset,
+                weeklyReset,
                 settings.lazyTrackingEnabled
               )
             );
+      const trackedByCharacter =
+        task.scope === "ROSTER"
+          ? [true]
+          : visibleCharacters.map((character) => {
+              const key = getTrackingEntryKey(character.name, task.id);
+              return settings.taskTracking[key] !== false;
+            });
 
       const allDone =
         task.scope === "ROSTER"
@@ -168,12 +170,25 @@ export function ChecklistClient() {
               if (!character) {
                 return true;
               }
+              if (!trackedByCharacter[index]) {
+                return true;
+              }
               const doable =
                 character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY);
               return !doable || value >= task.amount;
             });
+      const hasTrackedCharacter =
+        task.scope === "ROSTER" ||
+        visibleCharacters.some((character, index) => {
+          const doable =
+            character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY);
+          return trackedByCharacter[index] && doable;
+        });
 
       const shouldHideByAvailability = !available && task.canEditDaysFilter;
+      if (!hasTrackedCharacter) {
+        continue;
+      }
       if ((allDone && settings.hiddenOnCompletion) || (shouldHideByAvailability && !roster.showAllTasks)) {
         continue;
       }
@@ -182,14 +197,24 @@ export function ChecklistClient() {
         task,
         available,
         doneByCharacter,
+        trackedByCharacter,
         allDone
       });
     }
 
     return next;
   }, [
-    biWeeklyOffsetReset, biWeeklyReset, completion, dailyReset, now, roster.characters, roster.showAllTasks, settings.hiddenOnCompletion,
-    settings.lazyTrackingEnabled, tasks, visibleCharacters, weeklyReset
+    completion,
+    dailyReset,
+    now,
+    roster.characters,
+    roster.showAllTasks,
+    settings.hiddenOnCompletion,
+    settings.lazyTrackingEnabled,
+    settings.taskTracking,
+    tasks,
+    visibleCharacters,
+    weeklyReset
   ]);
 
   function updateCompletion(
@@ -202,7 +227,7 @@ export function ChecklistClient() {
       const next = { ...previous };
       const key = getCompletionEntryKey(character, task);
       const existing = next[key];
-      const resetBoundary = getTaskResetBoundary(task, dailyReset, weeklyReset, biWeeklyReset, biWeeklyOffsetReset);
+      const resetBoundary = getTaskResetBoundary(task, dailyReset, weeklyReset, weeklyReset, weeklyReset);
       const stale = existing && task.frequency !== "ONE_TIME" && existing.updated < resetBoundary;
       const oldAmount = stale ? 0 : existing?.amount ?? 0;
 
@@ -228,9 +253,9 @@ export function ChecklistClient() {
     return (
       <article className="card">
         <h1>Checklist</h1>
-        <p>Chua co character trong roster. Hay tao roster truoc de bat dau checklist.</p>
+        <p>Chưa có character trong roster. Hãy tạo roster trước để bắt đầu checklist.</p>
         <Link href="/roster" className="primary-link">
-          Mo trang Roster
+          Mở trang Roster
         </Link>
       </article>
     );
@@ -240,7 +265,7 @@ export function ChecklistClient() {
     return (
       <article className="card">
         <h1>Checklist</h1>
-        <p>Tat ca character hien dang o trang thai hidden. Bat tuy chon show hidden characters de xem.</p>
+        <p>Tất cả character hiện đang ở trạng thái hidden. Vui lòng bỏ hidden trong roster.</p>
       </article>
     );
   }
@@ -260,25 +285,12 @@ export function ChecklistClient() {
       </div>
 
       <div className="card checklist-meta">
-        <p>Ctrl + click vao nut task de danh dau full so lan trong mot lan nhan.</p>
+        <p>Ctrl + click vào nút task để đánh dấu đầy đủ số lần trong một lần nhấn.</p>
         <div className="checklist-countdowns">
           <span>Daily reset: {toDuration(getNextDailyReset(now), now)}</span>
           <span>Weekly reset: {toDuration(getNextWeeklyReset(now), now)}</span>
-          <span>Bi-weekly reset: {toDuration(getNextBiWeeklyReset(now), now)}</span>
-          <span>Offset bi-weekly reset: {toDuration(getNextBiWeeklyOffsetReset(now), now)}</span>
         </div>
         <div className="checklist-options">
-          <label>
-            <input
-              type="checkbox"
-              checked={settings.showHiddenCharacters}
-              onChange={(event) => {
-                const { checked } = event.currentTarget;
-                updateSettings({ showHiddenCharacters: checked });
-              }}
-            />{" "}
-            Show hidden characters
-          </label>
           <label>
             <input
               type="checkbox"
@@ -295,14 +307,12 @@ export function ChecklistClient() {
 
       {(
         [
-          "dailyCharacter",
-          "dailyRoster",
-          "weeklyCharacter",
-          "weeklyRoster",
-          "biWeeklyCharacter",
-          "biWeeklyRoster",
-          "oneTimeCharacter",
-          "oneTimeRoster"
+            "dailyCharacter",
+            "dailyRoster",
+            "weeklyCharacter",
+            "weeklyRoster",
+            "oneTimeCharacter",
+            "oneTimeRoster"
         ] as SectionKey[]
       ).map((section) => {
         const rows = rowsBySection[section];
@@ -371,6 +381,10 @@ export function ChecklistClient() {
                         const doable =
                           character.ilvl >= row.task.minIlvl &&
                           character.ilvl < (row.task.maxIlvl ?? Number.POSITIVE_INFINITY);
+                        const tracked = row.trackedByCharacter[index] !== false;
+                        if (!tracked) {
+                          return <td key={`${row.task.id}-${character.name}`}>Ignored</td>;
+                        }
                         if (!doable) {
                           return <td key={`${row.task.id}-${character.name}`}>-</td>;
                         }

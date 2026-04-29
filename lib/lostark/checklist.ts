@@ -7,6 +7,10 @@ export function getCompletionEntryKey(character: Character, task: LostarkTask): 
   return `${character.name}:${task.id}`;
 }
 
+export function getTrackingEntryKey(characterName: string, taskId: string): string {
+  return `${characterName}:${taskId}`;
+}
+
 export function isTaskAvailable(task: LostarkTask, now: number): boolean {
   if (!task.daysFilter?.length) {
     return true;
