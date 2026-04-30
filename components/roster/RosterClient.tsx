@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Character, RosterState } from "@/lib/lostark/types";
+import { CLASS_OPTIONS, DEFAULT_CLASS_NAME, normalizeClassName } from "@/lib/lostark/classes";
+import { Character, RosterAccount, RosterState } from "@/lib/lostark/types";
 import { defaultRosterState, readRosterState, writeRosterState } from "@/lib/lostark/storage";
 
 const emptyCharacter: Character = {
   name: "",
+  class: DEFAULT_CLASS_NAME,
   ilvl: 1540,
-  lazy: false,
-  weeklyGold: true,
-  isHide: false
+  weeklyGold: true
 };
 
 export function RosterClient() {
   const [roster, setRoster] = useState<RosterState>(defaultRosterState);
   const [form, setForm] = useState<Character>(emptyCharacter);
+  const [newAccountName, setNewAccountName] = useState("");
 
   useEffect(() => {
     setRoster(readRosterState());
@@ -27,34 +28,102 @@ export function RosterClient() {
 
   function addCharacter() {
     const normalizedName = form.name.trim();
-    if (!normalizedName) {
+    const targetAccountName = roster.selectedAccount.trim();
+    if (!normalizedName || !targetAccountName) {
       return;
     }
+    const targetIndex = roster.accounts.findIndex((account) => account.accountName === targetAccountName);
+    if (targetIndex === -1) {
+      return;
+    }
+    const nextAccounts = roster.accounts.map((account, index) =>
+      index === targetIndex
+        ? {
+            ...account,
+            characters: [
+              ...account.characters,
+              {
+                ...form,
+                class: normalizeClassName(form.class),
+                name: normalizedName
+              }
+            ]
+          }
+        : account
+    );
     const next: RosterState = {
       ...roster,
-      characters: [
-        ...roster.characters,
-        {
-          ...form,
-          name: normalizedName
-        }
-      ]
+      accounts: nextAccounts
     };
     save(next);
     setForm(emptyCharacter);
   }
 
+  function addAccount() {
+    const normalizedName = newAccountName.trim();
+    if (!normalizedName || roster.accounts.some((account) => account.accountName === normalizedName)) {
+      return;
+    }
+    const nextAccount: RosterAccount = {
+      accountName: normalizedName,
+      characters: []
+    };
+    save({
+      ...roster,
+      accounts: [...roster.accounts, nextAccount],
+      selectedAccount: normalizedName
+    });
+    setNewAccountName("");
+  }
+
+  function removeAccount() {
+    if (!roster.selectedAccount || roster.accounts.length <= 1) {
+      return;
+    }
+    const nextAccounts = roster.accounts.filter((account) => account.accountName !== roster.selectedAccount);
+    save({
+      ...roster,
+      accounts: nextAccounts,
+      selectedAccount: nextAccounts[0]?.accountName ?? ""
+    });
+  }
+
   function updateCharacter(index: number, patch: Partial<Character>) {
-    const nextCharacters = roster.characters.map((character, idx) =>
-      idx === index ? { ...character, ...patch } : character
+    const targetIndex = roster.accounts.findIndex((account) => account.accountName === roster.selectedAccount);
+    if (targetIndex === -1) {
+      return;
+    }
+    const nextAccounts = roster.accounts.map((account, idx) =>
+      idx === targetIndex
+        ? {
+            ...account,
+            characters: account.characters.map((character, characterIndex) =>
+              characterIndex === index ? { ...character, ...patch } : character
+            )
+          }
+        : account
     );
-    save({ ...roster, characters: nextCharacters });
+    save({ ...roster, accounts: nextAccounts });
   }
 
   function removeCharacter(index: number) {
-    const nextCharacters = roster.characters.filter((_, idx) => idx !== index);
-    save({ ...roster, characters: nextCharacters });
+    const targetIndex = roster.accounts.findIndex((account) => account.accountName === roster.selectedAccount);
+    if (targetIndex === -1) {
+      return;
+    }
+    const nextAccounts = roster.accounts.map((account, idx) =>
+      idx === targetIndex
+        ? {
+            ...account,
+            characters: account.characters.filter((_, characterIndex) => characterIndex !== index)
+          }
+        : account
+    );
+    save({ ...roster, accounts: nextAccounts });
   }
+
+  const selectedAccount = roster.accounts.find((account) => account.accountName === roster.selectedAccount);
+  const characters = selectedAccount?.characters ?? [];
 
   return (
     <div className="roster-page">
@@ -63,8 +132,67 @@ export function RosterClient() {
       </div>
 
       <section className="card roster-form">
+        <h2>Accounts</h2>
+        <div className="form-grid">
+          <label>
+            Selected account
+            <select
+              value={roster.selectedAccount}
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                save({ ...roster, selectedAccount: value });
+              }}
+            >
+              {roster.accounts.map((account) => (
+                <option key={account.accountName} value={account.accountName}>
+                  {account.accountName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            New account name
+            <input
+              value={newAccountName}
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setNewAccountName(value);
+              }}
+            />
+          </label>
+          <button type="button" className="task-btn" onClick={addAccount}>
+            Add account
+          </button>
+          <button
+            type="button"
+            className="task-btn reset"
+            onClick={removeAccount}
+            disabled={!roster.selectedAccount || roster.accounts.length <= 1}
+          >
+            Remove selected account
+          </button>
+        </div>
+      </section>
+
+      <section className="card roster-form">
         <h2>Add character</h2>
         <div className="form-grid">
+          <label>
+            Account
+            <select
+              value={roster.selectedAccount}
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                save({ ...roster, selectedAccount: value });
+              }}
+            >
+              {roster.accounts.map((account) => (
+                <option key={account.accountName} value={account.accountName}>
+                  {account.accountName}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             Name
             <input
@@ -74,6 +202,22 @@ export function RosterClient() {
                 setForm((previous) => ({ ...previous, name: value }));
               }}
             />
+          </label>
+          <label>
+            Class
+            <select
+              value={form.class}
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setForm((previous) => ({ ...previous, class: value }));
+              }}
+            >
+              {CLASS_OPTIONS.map((className) => (
+                <option key={className} value={className}>
+                  {className}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             iLvl
@@ -89,17 +233,6 @@ export function RosterClient() {
           <label className="checkbox-label">
             <input
               type="checkbox"
-              checked={form.lazy}
-              onChange={(event) => {
-                const { checked } = event.currentTarget;
-                setForm((previous) => ({ ...previous, lazy: checked }));
-              }}
-            />
-            Lazy tracking
-          </label>
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
               checked={form.weeklyGold}
               onChange={(event) => {
                 const { checked } = event.currentTarget;
@@ -108,18 +241,7 @@ export function RosterClient() {
             />
             Weekly gold
           </label>
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={Boolean(form.isHide)}
-              onChange={(event) => {
-                const { checked } = event.currentTarget;
-                setForm((previous) => ({ ...previous, isHide: checked }));
-              }}
-            />
-            Hidden
-          </label>
-          <button type="button" className="task-btn" onClick={addCharacter}>
+          <button type="button" className="task-btn" onClick={addCharacter} disabled={!roster.selectedAccount}>
             Add
           </button>
         </div>
@@ -140,25 +262,39 @@ export function RosterClient() {
       </section>
 
       <section className="card">
-        <h2>Characters</h2>
-        {roster.characters.length === 0 ? (
-          <p>Chua co character nao.</p>
+        <h2>Characters ({roster.selectedAccount || "No account"})</h2>
+        {characters.length === 0 ? (
+          <p>Chua co character nao trong account nay.</p>
         ) : (
           <table className="checklist-table">
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Class</th>
                 <th>iLvl</th>
-                <th>Lazy</th>
                 <th>Weekly Gold</th>
-                <th>Hidden</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {roster.characters.map((character, index) => (
+              {characters.map((character, index) => (
                 <tr key={`${character.name}-${index}`}>
                   <td>{character.name}</td>
+                  <td>
+                    <select
+                      value={character.class}
+                      onChange={(event) => {
+                        const { value } = event.currentTarget;
+                        updateCharacter(index, { class: normalizeClassName(value) });
+                      }}
+                    >
+                      {CLASS_OPTIONS.map((className) => (
+                        <option key={className} value={className}>
+                          {className}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td>
                     <input
                       type="number"
@@ -172,30 +308,10 @@ export function RosterClient() {
                   <td>
                     <input
                       type="checkbox"
-                      checked={character.lazy}
-                      onChange={(event) => {
-                        const { checked } = event.currentTarget;
-                        updateCharacter(index, { lazy: checked });
-                      }}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="checkbox"
                       checked={character.weeklyGold}
                       onChange={(event) => {
                         const { checked } = event.currentTarget;
                         updateCharacter(index, { weeklyGold: checked });
-                      }}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(character.isHide)}
-                      onChange={(event) => {
-                        const { checked } = event.currentTarget;
-                        updateCharacter(index, { isHide: checked });
                       }}
                     />
                   </td>

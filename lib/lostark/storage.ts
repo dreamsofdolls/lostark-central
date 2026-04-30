@@ -1,21 +1,23 @@
 import { defaultTasks } from "@/lib/lostark/defaultTasks";
-import { CompletionMap, LostarkTask, RosterState, SettingsState } from "@/lib/lostark/types";
+import { normalizeClassName } from "@/lib/lostark/classes";
+import { CompletionMap, LostarkTask, RosterAccount, RosterState, SettingsState } from "@/lib/lostark/types";
 
 const ROSTER_KEY = "lostark-central:roster";
 const COMPLETION_KEY = "lostark-central:completion";
 const TASKS_KEY = "lostark-central:tasks";
 const SETTINGS_KEY = "lostark-central:settings";
 const DATA_VERSION_KEY = "lostark-central:data-version";
-const CURRENT_DATA_VERSION = 4;
+const CURRENT_DATA_VERSION = 6;
+const DEFAULT_ACCOUNT_NAME = "Main";
 
 export const defaultRosterState: RosterState = {
-  characters: [],
+  accounts: [{ accountName: DEFAULT_ACCOUNT_NAME, characters: [] }],
+  selectedAccount: DEFAULT_ACCOUNT_NAME,
   showAllTasks: false
 };
 
 export const defaultSettingsState: SettingsState = {
   hiddenOnCompletion: false,
-  lazyTrackingEnabled: true,
   taskTracking: {}
 };
 
@@ -57,9 +59,51 @@ export function readRosterState(): RosterState {
     return defaultRosterState;
   }
   migrateStorageIfNeeded();
-  const parsed = safeParse<RosterState>(window.localStorage.getItem(ROSTER_KEY), defaultRosterState);
+  const parsed = safeParse<RosterState & { characters?: unknown[] }>(
+    window.localStorage.getItem(ROSTER_KEY),
+    defaultRosterState
+  );
+  const normalizeCharacter = (character: any) => ({
+    name: String(character?.name ?? "").trim(),
+    class: normalizeClassName(character?.class),
+    ilvl: Number(character?.ilvl ?? 0),
+    weeklyGold: Boolean(character?.weeklyGold),
+    note: typeof character?.note === "string" ? character.note : undefined
+  });
+
+  const normalizeAccount = (account: any): RosterAccount => ({
+    accountName: String(account?.accountName ?? "").trim(),
+    characters: Array.isArray(account?.characters)
+      ? account.characters.map(normalizeCharacter).filter((character) => character.name.length > 0)
+      : []
+  });
+
+  let normalizedAccounts =
+    Array.isArray(parsed.accounts) && parsed.accounts.length > 0
+      ? parsed.accounts.map(normalizeAccount).filter((account) => account.accountName.length > 0)
+      : Array.isArray(parsed.characters)
+        ? [
+            {
+              accountName: DEFAULT_ACCOUNT_NAME,
+              characters: parsed.characters
+                .map(normalizeCharacter)
+                .filter((character) => character.name.length > 0)
+            }
+          ]
+        : [];
+  if (normalizedAccounts.length === 0) {
+    normalizedAccounts = [{ accountName: DEFAULT_ACCOUNT_NAME, characters: [] }];
+  }
+
+  const selectedAccountRaw = String(parsed.selectedAccount ?? "").trim();
+  const selectedAccount =
+    normalizedAccounts.some((account) => account.accountName === selectedAccountRaw)
+      ? selectedAccountRaw
+      : normalizedAccounts[0]?.accountName ?? DEFAULT_ACCOUNT_NAME;
+
   return {
-    characters: parsed.characters ?? [],
+    accounts: normalizedAccounts,
+    selectedAccount,
     showAllTasks: Boolean(parsed.showAllTasks)
   };
 }
@@ -118,7 +162,6 @@ export function readSettingsState(): SettingsState {
   const parsed = safeParse<SettingsState>(window.localStorage.getItem(SETTINGS_KEY), defaultSettingsState);
   return {
     hiddenOnCompletion: Boolean(parsed.hiddenOnCompletion),
-    lazyTrackingEnabled: parsed.lazyTrackingEnabled !== false,
     taskTracking:
       parsed.taskTracking && typeof parsed.taskTracking === "object" ? parsed.taskTracking : {}
   };

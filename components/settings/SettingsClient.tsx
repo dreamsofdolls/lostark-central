@@ -5,15 +5,29 @@ import { LostarkTask, SettingsState } from "@/lib/lostark/types";
 import { defaultSettingsState, readRosterState, readSettingsState, readTasksState, writeSettingsState } from "@/lib/lostark/storage";
 import { getTrackingEntryKey } from "@/lib/lostark/checklist";
 
+type CharacterEntry = {
+  accountName: string;
+  characterName: string;
+  label: string;
+};
+
 export function SettingsClient() {
   const [settings, setSettings] = useState<SettingsState>(defaultSettingsState);
   const [tasks, setTasks] = useState<LostarkTask[]>([]);
-  const [characterNames, setCharacterNames] = useState<string[]>([]);
+  const [characterEntries, setCharacterEntries] = useState<CharacterEntry[]>([]);
 
   useEffect(() => {
     setSettings(readSettingsState());
     setTasks(readTasksState().filter((task) => task.scope === "CHARACTER" && task.enabled));
-    setCharacterNames(readRosterState().characters.filter((character) => !character.isHide).map((character) => character.name));
+    setCharacterEntries(
+      readRosterState().accounts.flatMap((account) =>
+        account.characters.map((character) => ({
+          accountName: account.accountName,
+          characterName: character.name,
+          label: `${character.name} (${account.accountName})`
+        }))
+      )
+    );
   }, []);
 
   function save(patch: Partial<SettingsState>) {
@@ -24,8 +38,8 @@ export function SettingsClient() {
     });
   }
 
-  function setTracking(characterName: string, taskId: string, tracked: boolean) {
-    const key = getTrackingEntryKey(characterName, taskId);
+  function setTracking(accountName: string, characterName: string, taskId: string, tracked: boolean) {
+    const key = getTrackingEntryKey(accountName, characterName, taskId);
     const nextMap = { ...settings.taskTracking, [key]: tracked };
     save({ taskTracking: nextMap });
   }
@@ -33,15 +47,15 @@ export function SettingsClient() {
   const trackingRows = useMemo(() => {
     return tasks.map((task) => ({
       task,
-      cells: characterNames.map((name) => {
-        const key = getTrackingEntryKey(name, task.id);
+      cells: characterEntries.map((entry) => {
+        const key = getTrackingEntryKey(entry.accountName, entry.characterName, task.id);
         return {
-          name,
+          ...entry,
           tracked: settings.taskTracking[key] !== false
         };
       })
     }));
-  }, [characterNames, settings.taskTracking, tasks]);
+  }, [characterEntries, settings.taskTracking, tasks]);
 
   return (
     <div className="settings-page">
@@ -53,7 +67,7 @@ export function SettingsClient() {
           <h2 className="text-lg font-semibold">Task tracking</h2>
           <p className="mt-1 text-sm text-zinc-400">Bat/tat tracking theo tung character cho checklist.</p>
         </div>
-        {characterNames.length === 0 ? (
+        {characterEntries.length === 0 ? (
           <p className="p-5 text-sm text-zinc-400">Chua co character trong roster.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -61,9 +75,9 @@ export function SettingsClient() {
               <thead className="bg-zinc-950/60 text-zinc-400">
                 <tr>
                   <th className="border-b border-zinc-800 px-4 py-3 text-left">Task</th>
-                  {characterNames.map((name) => (
-                    <th key={name} className="border-b border-zinc-800 px-4 py-3 text-center">
-                      {name}
+                  {characterEntries.map((entry) => (
+                    <th key={`${entry.accountName}:${entry.characterName}`} className="border-b border-zinc-800 px-4 py-3 text-center">
+                      {entry.label}
                     </th>
                   ))}
                 </tr>
@@ -73,14 +87,16 @@ export function SettingsClient() {
                   <tr key={row.task.id} className="border-b border-zinc-800/80 last:border-b-0">
                     <td className="px-4 py-3 text-zinc-100">{row.task.label}</td>
                     {row.cells.map((cell) => (
-                      <td key={`${row.task.id}-${cell.name}`} className="px-4 py-3 text-center">
+                      <td key={`${row.task.id}-${cell.accountName}-${cell.characterName}`} className="px-4 py-3 text-center">
                         <button
                           type="button"
                           aria-pressed={cell.tracked}
                           className={`relative inline-flex h-8 w-28 items-center rounded-full px-1 transition ${
                             cell.tracked ? "bg-emerald-600/90" : "bg-zinc-700"
                           }`}
-                          onClick={() => setTracking(cell.name, row.task.id, !cell.tracked)}
+                          onClick={() =>
+                            setTracking(cell.accountName, cell.characterName, row.task.id, !cell.tracked)
+                          }
                         >
                           <span
                             className={`h-6 w-6 rounded-full bg-white shadow transition ${

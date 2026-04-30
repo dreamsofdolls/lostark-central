@@ -16,7 +16,7 @@ Phase 1 migration tu `Lostark-helper-master` (Angular/Nx) sang Next.js de deploy
 
 ## Da migrate trong phase 2 (hien tai)
 
-- `/roster`: quan ly character (them/sua/xoa, lazy, hidden, weekly gold, show-all-tasks).
+- `/roster`: quan ly nhieu account trong 1 discord user, them/sua/xoa character theo account (class + iLvl + weekly gold, show-all-tasks).
 - `/checklist`: port logic checklist core:
   - Daily/weekly/bi-weekly reset countdown.
   - Group task theo tan suat + scope (character/roster).
@@ -26,12 +26,32 @@ Phase 1 migration tu `Lostark-helper-master` (Angular/Nx) sang Next.js de deploy
 ## Da migrate trong phase 3
 
 - `/tasks-manager`: quan ly task tu localStorage (them moi, bat/tat, xoa, reset ve default, tim kiem).
-- `/settings`: cau hinh behavior checklist (hide completed, show hidden characters, lazy tracking, region).
+- `/settings`: bat/tat task tracking theo tung character + hide completed task.
 - Data layer chung:
   - `tasks`, `settings`, `roster`, `completion` dung key rieng va co migration version.
 - `/checklist` da duoc noi voi data layer moi:
   - Doc task tu tasks-manager.
-  - Ap dung settings cho hide completed + hidden character + lazy tracking.
+  - Ap dung settings cho hide completed + task tracking on/off.
+  - Hien thi character kem account de tranh trung ten giua nhieu account.
+
+## MongoDB schema + shared DB
+
+- Da bo sung ket noi Mongo theo mau `db.js`:
+  - `lib/mongo/db.ts` (lazy connect + DNS fallback + index ensure).
+- Da bo sung User schema theo cau truc `user.js`:
+  - `lib/mongo/models/User.ts` (giu form field de dung chung DB, bo sung `centralWebState` de luu state web).
+- API luu/doc state web:
+  - `GET /api/user/state?discordId=...`
+  - `POST /api/user/state` voi body `{ discordId, state }`
+
+Env can thiet:
+
+```bash
+MONGO_URI=...
+MONGO_DB_NAME=manage
+DNS_SERVERS=8.8.8.8,1.1.1.1
+MONGO_ENSURE_INDEXES=true
+```
 
 ## Chay local
 

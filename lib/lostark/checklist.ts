@@ -1,14 +1,14 @@
 import { Character, CompletionMap, LostarkTask } from "@/lib/lostark/types";
 
-export function getCompletionEntryKey(character: Character, task: LostarkTask): string {
+export function getCompletionEntryKey(character: Character, task: LostarkTask, accountName = "default"): string {
   if (task.scope === "ROSTER") {
     return task.id;
   }
-  return `${character.name}:${task.id}`;
+  return `${accountName}:${character.name}:${task.id}`;
 }
 
-export function getTrackingEntryKey(characterName: string, taskId: string): string {
-  return `${characterName}:${taskId}`;
+export function getTrackingEntryKey(accountName: string, characterName: string, taskId: string): string {
+  return `${accountName}:${characterName}:${taskId}`;
 }
 
 export function isTaskAvailable(task: LostarkTask, now: number): boolean {
@@ -44,14 +44,14 @@ export function getTaskResetBoundary(
 export function getDoneAmount(
   task: LostarkTask,
   character: Character,
+  accountName: string,
   completion: CompletionMap,
   dailyReset: number,
   weeklyReset: number,
   biWeeklyReset: number,
-  biWeeklyOffsetReset: number,
-  lazyTrackingEnabled = true
+  biWeeklyOffsetReset: number
 ): number {
-  const key = getCompletionEntryKey(character, task);
+  const key = getCompletionEntryKey(character, task, accountName);
   const entry = completion[key];
   if (!entry) {
     return 0;
@@ -61,10 +61,7 @@ export function getDoneAmount(
     return entry.amount;
   }
 
-  let resetBoundary = getTaskResetBoundary(task, dailyReset, weeklyReset, biWeeklyReset, biWeeklyOffsetReset);
-  if (lazyTrackingEnabled && character.lazy && task.scope === "CHARACTER") {
-    resetBoundary -= 2 * 24 * 60 * 60 * 1000;
-  }
+  const resetBoundary = getTaskResetBoundary(task, dailyReset, weeklyReset, biWeeklyReset, biWeeklyOffsetReset);
   if (entry.updated < resetBoundary) {
     return 0;
   }

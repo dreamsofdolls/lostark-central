@@ -23,15 +23,20 @@ export type LostarkTask = {
 
 export type Character = {
   name: string;
+  class: string;
   ilvl: number;
-  lazy: boolean;
-  isHide?: boolean;
   weeklyGold: boolean;
   note?: string;
 };
 
-export type RosterState = {
+export type RosterAccount = {
+  accountName: string;
   characters: Character[];
+};
+
+export type RosterState = {
+  accounts: RosterAccount[];
+  selectedAccount: string;
   showAllTasks: boolean;
 };
 
@@ -44,6 +49,5 @@ export type CompletionMap = Record<string, CompletionEntry>;
 
 export type SettingsState = {
   hiddenOnCompletion: boolean;
-  lazyTrackingEnabled: boolean;
   taskTracking: Record<string, boolean>;
 };

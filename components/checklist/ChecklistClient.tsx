@@ -2,6 +2,7 @@
 
 import { MouseEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { DEFAULT_CLASS_NAME } from "@/lib/lostark/classes";
 import { Character, CompletionMap, LostarkTask, SettingsState } from "@/lib/lostark/types";
 import {
   defaultRosterState,
@@ -41,6 +42,11 @@ type ChecklistRow = {
   doneByCharacter: number[];
   trackedByCharacter: boolean[];
   allDone: boolean;
+};
+
+type RosterCharacterEntry = {
+  accountName: string;
+  character: Character;
 };
 
 const sectionLabels: Record<SectionKey, string> = {
@@ -103,9 +109,15 @@ export function ChecklistClient() {
   const dailyReset = getLastDailyReset(now);
   const weeklyReset = getLastWeeklyReset(now);
 
-  const visibleCharacters = useMemo(
-    () => roster.characters.filter((character) => !character.isHide),
-    [roster.characters]
+  const rosterCharacters = useMemo<RosterCharacterEntry[]>(
+    () =>
+      roster.accounts.flatMap((account) =>
+        account.characters.map((character) => ({
+          accountName: account.accountName,
+          character
+        }))
+      ),
+    [roster.accounts]
   );
 
   const rowsBySection = useMemo(() => {
@@ -121,44 +133,51 @@ export function ChecklistClient() {
     const eligibleTasks = tasks.filter(
       (task) =>
         task.enabled &&
-      roster.characters.some(
-        (character) => character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY)
+      rosterCharacters.some(
+        ({ character }) =>
+          character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY)
       )
     );
 
     for (const task of eligibleTasks) {
+      const fallbackEntry = rosterCharacters[0];
       const available = isTaskAvailable(task, now);
       const doneByCharacter =
         task.scope === "ROSTER"
           ? [
               getDoneAmount(
                 task,
-                roster.characters[0] ?? { name: "Roster", ilvl: 0, lazy: false, weeklyGold: false },
+                fallbackEntry?.character ?? {
+                  name: "Roster",
+                  class: DEFAULT_CLASS_NAME,
+                  ilvl: 0,
+                  weeklyGold: false
+                },
+                fallbackEntry?.accountName ?? "Roster",
                 completion,
                 dailyReset,
                 weeklyReset,
                 weeklyReset,
-                weeklyReset,
-                settings.lazyTrackingEnabled
+                weeklyReset
               )
             ]
-          : visibleCharacters.map((character) =>
+          : rosterCharacters.map(({ accountName, character }) =>
               getDoneAmount(
                 task,
                 character,
+                accountName,
                 completion,
                 dailyReset,
                 weeklyReset,
                 weeklyReset,
-                weeklyReset,
-                settings.lazyTrackingEnabled
+                weeklyReset
               )
             );
       const trackedByCharacter =
         task.scope === "ROSTER"
           ? [true]
-          : visibleCharacters.map((character) => {
-              const key = getTrackingEntryKey(character.name, task.id);
+          : rosterCharacters.map(({ accountName, character }) => {
+              const key = getTrackingEntryKey(accountName, character.name, task.id);
               return settings.taskTracking[key] !== false;
             });
 
@@ -166,7 +185,7 @@ export function ChecklistClient() {
         task.scope === "ROSTER"
           ? doneByCharacter[0] >= task.amount
           : doneByCharacter.every((value, index) => {
-              const character = visibleCharacters[index];
+              const character = rosterCharacters[index]?.character;
               if (!character) {
                 return true;
               }
@@ -179,7 +198,7 @@ export function ChecklistClient() {
             });
       const hasTrackedCharacter =
         task.scope === "ROSTER" ||
-        visibleCharacters.some((character, index) => {
+        rosterCharacters.some(({ character }, index) => {
           const doable =
             character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY);
           return trackedByCharacter[index] && doable;
@@ -207,25 +226,25 @@ export function ChecklistClient() {
     completion,
     dailyReset,
     now,
-    roster.characters,
+    roster.accounts,
     roster.showAllTasks,
     settings.hiddenOnCompletion,
-    settings.lazyTrackingEnabled,
     settings.taskTracking,
     tasks,
-    visibleCharacters,
+    rosterCharacters,
     weeklyReset
   ]);
 
   function updateCompletion(
     task: LostarkTask,
     character: Character,
+    accountName: string,
     done: boolean,
     clickEvent?: MouseEvent<HTMLButtonElement>
   ) {
     setCompletion((previous) => {
       const next = { ...previous };
-      const key = getCompletionEntryKey(character, task);
+      const key = getCompletionEntryKey(character, task, accountName);
       const existing = next[key];
       const resetBoundary = getTaskResetBoundary(task, dailyReset, weeklyReset, weeklyReset, weeklyReset);
       const stale = existing && task.frequency !== "ONE_TIME" && existing.updated < resetBoundary;
@@ -249,7 +268,7 @@ export function ChecklistClient() {
     });
   }
 
-  if (roster.characters.length === 0) {
+  if (rosterCharacters.length === 0) {
     return (
       <article className="card">
         <h1>Checklist</h1>
@@ -257,15 +276,6 @@ export function ChecklistClient() {
         <Link href="/roster" className="primary-link">
           Mở trang Roster
         </Link>
-      </article>
-    );
-  }
-
-  if (visibleCharacters.length === 0) {
-    return (
-      <article className="card">
-        <h1>Checklist</h1>
-        <p>Tất cả character hiện đang ở trạng thái hidden. Vui lòng bỏ hidden trong roster.</p>
       </article>
     );
   }
@@ -329,7 +339,9 @@ export function ChecklistClient() {
                 <tr>
                   <th>Task</th>
                   {isCharacterScope ? (
-                    visibleCharacters.map((character) => <th key={character.name}>{character.name}</th>)
+                    rosterCharacters.map(({ accountName, character }) => (
+                      <th key={`${accountName}:${character.name}`}>{character.name} ({accountName})</th>
+                    ))
                   ) : (
                     <th>Roster</th>
                   )}
@@ -347,12 +359,13 @@ export function ChecklistClient() {
                           onClick={(event) =>
                             updateCompletion(
                               row.task,
-                              visibleCharacters[0] ?? {
+                              rosterCharacters[0]?.character ?? {
                                 name: "Roster",
+                                class: DEFAULT_CLASS_NAME,
                                 ilvl: 0,
-                                lazy: false,
                                 weeklyGold: false
                               },
+                              rosterCharacters[0]?.accountName ?? "Roster",
                               true,
                               event
                             )
@@ -367,34 +380,34 @@ export function ChecklistClient() {
                           onClick={() =>
                             updateCompletion(row.task, {
                               name: "Roster",
+                              class: DEFAULT_CLASS_NAME,
                               ilvl: 0,
-                              lazy: false,
                               weeklyGold: false
-                            }, false)
+                            }, "Roster", false)
                           }
                         >
                           Reset
                         </button>
                       </td>
                     ) : (
-                      visibleCharacters.map((character, index) => {
+                      rosterCharacters.map(({ accountName, character }, index) => {
                         const doable =
                           character.ilvl >= row.task.minIlvl &&
                           character.ilvl < (row.task.maxIlvl ?? Number.POSITIVE_INFINITY);
                         const tracked = row.trackedByCharacter[index] !== false;
                         if (!tracked) {
-                          return <td key={`${row.task.id}-${character.name}`}>Ignored</td>;
+                          return <td key={`${row.task.id}-${accountName}-${character.name}`}>Ignored</td>;
                         }
                         if (!doable) {
-                          return <td key={`${row.task.id}-${character.name}`}>-</td>;
+                          return <td key={`${row.task.id}-${accountName}-${character.name}`}>-</td>;
                         }
                         const doneAmount = row.doneByCharacter[index] ?? 0;
                         return (
-                          <td key={`${row.task.id}-${character.name}`}>
+                          <td key={`${row.task.id}-${accountName}-${character.name}`}>
                             <button
                               type="button"
                               className="task-btn"
-                              onClick={(event) => updateCompletion(row.task, character, true, event)}
+                              onClick={(event) => updateCompletion(row.task, character, accountName, true, event)}
                               disabled={doneAmount >= row.task.amount}
                             >
                               {doneAmount}/{row.task.amount}
@@ -402,7 +415,7 @@ export function ChecklistClient() {
                             <button
                               type="button"
                               className="task-btn reset"
-                              onClick={() => updateCompletion(row.task, character, false)}
+                              onClick={() => updateCompletion(row.task, character, accountName, false)}
                             >
                               Reset
                             </button>
