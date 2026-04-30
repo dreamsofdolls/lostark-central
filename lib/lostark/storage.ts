@@ -1,6 +1,13 @@
 import { defaultTasks } from "@/lib/lostark/defaultTasks";
 import { normalizeClassName } from "@/lib/lostark/classes";
-import { CompletionMap, LostarkTask, RosterAccount, RosterState, SettingsState } from "@/lib/lostark/types";
+import {
+  Character,
+  CompletionMap,
+  LostarkTask,
+  RosterAccount,
+  RosterState,
+  SettingsState
+} from "@/lib/lostark/types";
 
 const ROSTER_KEY = "lostark-central:roster";
 const COMPLETION_KEY = "lostark-central:completion";
@@ -63,18 +70,23 @@ export function readRosterState(): RosterState {
     window.localStorage.getItem(ROSTER_KEY),
     defaultRosterState
   );
-  const normalizeCharacter = (character: any) => ({
-    name: String(character?.name ?? "").trim(),
-    class: normalizeClassName(character?.class),
-    ilvl: Number(character?.ilvl ?? 0),
-    weeklyGold: Boolean(character?.weeklyGold),
-    note: typeof character?.note === "string" ? character.note : undefined
-  });
+  const normalizeCharacter = (character: unknown): Character => {
+    const raw = (character ?? {}) as Partial<Character> & { class?: string };
+    return {
+      name: String(raw.name ?? "").trim(),
+      class: normalizeClassName(raw.class),
+      ilvl: Number(raw.ilvl ?? 0),
+      weeklyGold: Boolean(raw.weeklyGold),
+      note: typeof raw.note === "string" ? raw.note : undefined
+    };
+  };
 
   const normalizeAccount = (account: any): RosterAccount => ({
     accountName: String(account?.accountName ?? "").trim(),
     characters: Array.isArray(account?.characters)
-      ? account.characters.map(normalizeCharacter).filter((character) => character.name.length > 0)
+      ? (account.characters as unknown[])
+          .map(normalizeCharacter)
+          .filter((character: Character) => character.name.length > 0)
       : []
   });
 
@@ -87,7 +99,7 @@ export function readRosterState(): RosterState {
               accountName: DEFAULT_ACCOUNT_NAME,
               characters: parsed.characters
                 .map(normalizeCharacter)
-                .filter((character) => character.name.length > 0)
+                .filter((character: Character) => character.name.length > 0)
             }
           ]
         : [];

@@ -226,7 +226,6 @@ export function ChecklistClient() {
     completion,
     dailyReset,
     now,
-    roster.accounts,
     roster.showAllTasks,
     settings.hiddenOnCompletion,
     settings.taskTracking,
