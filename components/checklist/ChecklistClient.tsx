@@ -57,6 +57,10 @@ const sectionLabels: Record<SectionKey, string> = {
   oneTimeCharacter: "One-Time Character",
   oneTimeRoster: "One-Time Roster"
 };
+const selectClassName =
+  "rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30";
+const actionButtonClass =
+  "rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40";
 
 function toDuration(target: number, now: number): string {
   const remain = Math.max(0, target - now);
@@ -279,10 +283,13 @@ export function ChecklistClient() {
 
   if (rosterCharacters.length === 0) {
     return (
-      <article className="card">
-        <h1>Checklist</h1>
-        <p>Chưa có character trong roster. Hãy tạo roster trước để bắt đầu checklist.</p>
-        <Link href="/roster" className="primary-link">
+      <article className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <h1 className="text-2xl font-bold">Checklist</h1>
+        <p className="mt-2 text-zinc-300">Chưa có character trong roster. Hãy tạo roster trước để bắt đầu checklist.</p>
+        <Link
+          href="/roster"
+          className="mt-3 inline-flex rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+        >
           Mở trang Roster
         </Link>
       </article>
@@ -298,21 +305,22 @@ export function ChecklistClient() {
   }
 
   return (
-    <div className="checklist-page">
-      <div className="header">
-        <h1>Checklist</h1>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Checklist</h1>
       </div>
 
-      <div className="card checklist-meta">
-        <p>Ctrl + click để full task, chuột phải để trừ 1 lần hoàn thành.</p>
-        <div className="checklist-countdowns">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <p className="text-sm text-zinc-300">Ctrl + click để full task, chuột phải để trừ 1 lần hoàn thành.</p>
+        <div className="mb-3 mt-3 grid gap-1 text-sm text-zinc-400">
           <span>Daily reset: {toDuration(getNextDailyReset(now), now)}</span>
           <span>Weekly reset: {toDuration(getNextWeeklyReset(now), now)}</span>
         </div>
-        <div className="checklist-options">
-          <label>
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <label className="flex items-center gap-2">
             Account
             <select
+              className={selectClassName}
               value={accountFilter}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -327,7 +335,7 @@ export function ChecklistClient() {
               ))}
             </select>
           </label>
-          <label>
+          <label className="flex items-center gap-2 text-zinc-300">
             <input
               type="checkbox"
               checked={settings.hiddenOnCompletion}
@@ -342,8 +350,8 @@ export function ChecklistClient() {
       </div>
 
       {filteredRosterCharacters.length === 0 ? (
-        <article className="card">
-          <p>Account này chưa có character.</p>
+        <article className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+          <p className="text-zinc-300">Account này chưa có character.</p>
         </article>
       ) : null}
 
@@ -364,30 +372,39 @@ export function ChecklistClient() {
         const isCharacterScope = section.endsWith("Character");
 
         return (
-          <section className="card checklist-section" key={section}>
-            <h2>{sectionLabels[section]}</h2>
-            <table className="checklist-table">
-              <thead>
+          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl" key={section}>
+            <h2 className="mb-3 text-lg font-semibold">{sectionLabels[section]}</h2>
+            <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/40">
+            <table className="min-w-full text-sm">
+              <thead className="bg-zinc-950/70 text-zinc-400">
                 <tr>
-                  <th>Task</th>
+                  <th className="border-b border-zinc-800 px-4 py-3 text-left font-semibold">Task</th>
                   {isCharacterScope ? (
                     filteredRosterCharacters.map(({ accountName, character }) => (
-                      <th key={`${accountName}:${character.name}`}>{character.name} ({accountName})</th>
+                      <th
+                        key={`${accountName}:${character.name}`}
+                        className="border-b border-zinc-800 px-3 py-3 text-center font-semibold"
+                      >
+                        {character.name} ({accountName})
+                      </th>
                     ))
                   ) : (
-                    <th>Roster</th>
+                    <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold">Roster</th>
                   )}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.task.id} className={!row.available ? "task-unavailable" : row.allDone ? "task-done" : ""}>
-                    <td>{row.task.label}</td>
+                  <tr
+                    key={row.task.id}
+                    className={!row.available ? "bg-fuchsia-900/30" : row.allDone ? "bg-emerald-900/30" : ""}
+                  >
+                    <td className="border-b border-zinc-800/80 px-4 py-3 text-left">{row.task.label}</td>
                     {row.task.scope === "ROSTER" ? (
-                      <td>
+                      <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
                         <button
                           type="button"
-                          className="task-btn"
+                          className={actionButtonClass}
                           onClick={(event) =>
                             adjustCompletion(
                               row.task,
@@ -427,17 +444,34 @@ export function ChecklistClient() {
                           character.ilvl < (row.task.maxIlvl ?? Number.POSITIVE_INFINITY);
                         const tracked = row.trackedByCharacter[index] !== false;
                         if (!tracked) {
-                          return <td key={`${row.task.id}-${accountName}-${character.name}`}>Ignored</td>;
+                          return (
+                            <td
+                              key={`${row.task.id}-${accountName}-${character.name}`}
+                              className="border-b border-zinc-800/80 px-3 py-3 text-center text-zinc-500"
+                            >
+                              Ignored
+                            </td>
+                          );
                         }
                         if (!doable) {
-                          return <td key={`${row.task.id}-${accountName}-${character.name}`}>-</td>;
+                          return (
+                            <td
+                              key={`${row.task.id}-${accountName}-${character.name}`}
+                              className="border-b border-zinc-800/80 px-3 py-3 text-center text-zinc-500"
+                            >
+                              -
+                            </td>
+                          );
                         }
                         const doneAmount = row.doneByCharacter[index] ?? 0;
                         return (
-                          <td key={`${row.task.id}-${accountName}-${character.name}`}>
+                          <td
+                            key={`${row.task.id}-${accountName}-${character.name}`}
+                            className="border-b border-zinc-800/80 px-3 py-3 text-center"
+                          >
                             <button
                               type="button"
-                              className="task-btn"
+                              className={actionButtonClass}
                               onClick={(event) => adjustCompletion(row.task, character, accountName, 1, event)}
                               onContextMenu={(event) => {
                                 event.preventDefault();
@@ -454,6 +488,7 @@ export function ChecklistClient() {
                 ))}
               </tbody>
             </table>
+            </div>
           </section>
         );
       })}

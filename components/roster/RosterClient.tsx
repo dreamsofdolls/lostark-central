@@ -11,6 +11,14 @@ const emptyCharacter: Character = {
   ilvl: 1540,
   weeklyGold: true
 };
+const selectClassName =
+  "rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30";
+const inputClassName =
+  "rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30";
+const primaryButtonClass =
+  "rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60";
+const secondaryButtonClass =
+  "rounded-lg bg-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function RosterClient() {
   const [roster, setRoster] = useState<RosterState>(defaultRosterState);
@@ -126,17 +134,18 @@ export function RosterClient() {
   const characters = selectedAccount?.characters ?? [];
 
   return (
-    <div className="roster-page">
-      <div className="header">
-        <h1>Roster</h1>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Roster</h1>
       </div>
 
-      <section className="card roster-form">
-        <h2>Accounts</h2>
-        <div className="form-grid">
-          <label>
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <h2 className="mb-3 text-lg font-semibold">Accounts</h2>
+        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <label className="flex flex-col gap-1.5 text-sm">
             Selected account
             <select
+              className={selectClassName}
               value={roster.selectedAccount}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -150,9 +159,10 @@ export function RosterClient() {
               ))}
             </select>
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             New account name
             <input
+              className={inputClassName}
               value={newAccountName}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -160,12 +170,12 @@ export function RosterClient() {
               }}
             />
           </label>
-          <button type="button" className="task-btn" onClick={addAccount}>
+          <button type="button" className={primaryButtonClass} onClick={addAccount}>
             Add account
           </button>
           <button
             type="button"
-            className="task-btn reset"
+            className={secondaryButtonClass}
             onClick={removeAccount}
             disabled={!roster.selectedAccount || roster.accounts.length <= 1}
           >
@@ -174,12 +184,13 @@ export function RosterClient() {
         </div>
       </section>
 
-      <section className="card roster-form">
-        <h2>Add character</h2>
-        <div className="form-grid">
-          <label>
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <h2 className="mb-3 text-lg font-semibold">Add character</h2>
+        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <label className="flex flex-col gap-1.5 text-sm">
             Account
             <select
+              className={selectClassName}
               value={roster.selectedAccount}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -193,9 +204,10 @@ export function RosterClient() {
               ))}
             </select>
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             Name
             <input
+              className={inputClassName}
               value={form.name}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -203,9 +215,10 @@ export function RosterClient() {
               }}
             />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             Class
             <select
+              className={selectClassName}
               value={form.class}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -219,9 +232,10 @@ export function RosterClient() {
               ))}
             </select>
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             iLvl
             <input
+              className={inputClassName}
               type="number"
               value={form.ilvl}
               onChange={(event) => {
@@ -230,7 +244,7 @@ export function RosterClient() {
               }}
             />
           </label>
-          <label className="checkbox-label">
+          <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={form.weeklyGold}
@@ -241,14 +255,14 @@ export function RosterClient() {
             />
             Weekly gold
           </label>
-          <button type="button" className="task-btn" onClick={addCharacter} disabled={!roster.selectedAccount}>
+          <button type="button" className={primaryButtonClass} onClick={addCharacter} disabled={!roster.selectedAccount}>
             Add
           </button>
         </div>
       </section>
 
-      <section className="card roster-settings">
-        <label className="checkbox-label">
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <label className="flex items-center gap-2 text-sm text-zinc-300">
           <input
             type="checkbox"
             checked={roster.showAllTasks}
@@ -261,27 +275,29 @@ export function RosterClient() {
         </label>
       </section>
 
-      <section className="card">
-        <h2>Characters ({roster.selectedAccount || "No account"})</h2>
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <h2 className="mb-3 text-lg font-semibold">Characters ({roster.selectedAccount || "No account"})</h2>
         {characters.length === 0 ? (
-          <p>Chua co character nao trong account nay.</p>
+          <p className="text-zinc-400">Chua co character nao trong account nay.</p>
         ) : (
-          <table className="checklist-table">
+          <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/40">
+          <table className="min-w-full text-sm">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Class</th>
-                <th>iLvl</th>
-                <th>Weekly Gold</th>
-                <th>Actions</th>
+                <th className="border-b border-zinc-800 px-4 py-3 text-left font-semibold text-zinc-400">Name</th>
+                <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold text-zinc-400">Class</th>
+                <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold text-zinc-400">iLvl</th>
+                <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold text-zinc-400">Weekly Gold</th>
+                <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold text-zinc-400">Actions</th>
               </tr>
             </thead>
             <tbody>
               {characters.map((character, index) => (
                 <tr key={`${character.name}-${index}`}>
-                  <td>{character.name}</td>
-                  <td>
+                  <td className="border-b border-zinc-800/80 px-4 py-3 text-left">{character.name}</td>
+                  <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
                     <select
+                      className={selectClassName}
                       value={character.class}
                       onChange={(event) => {
                         const { value } = event.currentTarget;
@@ -295,8 +311,9 @@ export function RosterClient() {
                       ))}
                     </select>
                   </td>
-                  <td>
+                  <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
                     <input
+                      className={`${inputClassName} w-24 text-center`}
                       type="number"
                       value={character.ilvl}
                       onChange={(event) => {
@@ -305,7 +322,7 @@ export function RosterClient() {
                       }}
                     />
                   </td>
-                  <td>
+                  <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
                     <input
                       type="checkbox"
                       checked={character.weeklyGold}
@@ -315,8 +332,8 @@ export function RosterClient() {
                       }}
                     />
                   </td>
-                  <td>
-                    <button type="button" className="task-btn reset" onClick={() => removeCharacter(index)}>
+                  <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
+                    <button type="button" className={secondaryButtonClass} onClick={() => removeCharacter(index)}>
                       Remove
                     </button>
                   </td>
@@ -324,6 +341,7 @@ export function RosterClient() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
     </div>

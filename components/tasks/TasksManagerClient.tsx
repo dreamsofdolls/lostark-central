@@ -26,6 +26,13 @@ const defaultForm: TaskForm = {
   enabled: true,
   daysFilter: ""
 };
+const inputClassName =
+  "rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30";
+const selectClassName = inputClassName;
+const primaryButtonClass =
+  "rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60";
+const secondaryButtonClass =
+  "rounded-lg bg-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-60";
 
 function createTaskId(label: string): string {
   return `${label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}-${Date.now()}`;
@@ -94,17 +101,18 @@ export function TasksManagerClient() {
   }, [query, tasks]);
 
   return (
-    <div className="tasks-page">
-      <div className="header">
-        <h1>Tasks Manager</h1>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Tasks Manager</h1>
       </div>
 
-      <section className="card">
-        <h2>Add task</h2>
-        <div className="form-grid">
-          <label>
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <h2 className="mb-3 text-lg font-semibold">Add task</h2>
+        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <label className="flex flex-col gap-1.5 text-sm">
             Label
             <input
+              className={inputClassName}
               value={form.label}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -112,9 +120,10 @@ export function TasksManagerClient() {
               }}
             />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             Min iLvl
             <input
+              className={inputClassName}
               type="number"
               value={form.minIlvl}
               onChange={(event) => {
@@ -123,9 +132,10 @@ export function TasksManagerClient() {
               }}
             />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             Max iLvl
             <input
+              className={inputClassName}
               type="number"
               value={form.maxIlvl}
               onChange={(event) => {
@@ -134,9 +144,10 @@ export function TasksManagerClient() {
               }}
             />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             Amount
             <input
+              className={inputClassName}
               type="number"
               min={1}
               value={form.amount}
@@ -146,9 +157,10 @@ export function TasksManagerClient() {
               }}
             />
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             Frequency
             <select
+              className={selectClassName}
               value={form.frequency}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -162,9 +174,10 @@ export function TasksManagerClient() {
               <option value="ONE_TIME">ONE_TIME</option>
             </select>
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             Scope
             <select
+              className={selectClassName}
               value={form.scope}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -175,9 +188,10 @@ export function TasksManagerClient() {
               <option value="ROSTER">ROSTER</option>
             </select>
           </label>
-          <label>
+          <label className="flex flex-col gap-1.5 text-sm">
             Day filter (0-6, comma)
             <input
+              className={inputClassName}
               value={form.daysFilter}
               onChange={(event) => {
                 const { value } = event.currentTarget;
@@ -186,7 +200,7 @@ export function TasksManagerClient() {
               placeholder="1,3,5"
             />
           </label>
-          <label className="checkbox-label">
+          <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={form.enabled}
@@ -197,15 +211,16 @@ export function TasksManagerClient() {
             />
             Enabled
           </label>
-          <button type="button" className="task-btn" onClick={addTask}>
+          <button type="button" className={primaryButtonClass} onClick={addTask}>
             Add task
           </button>
         </div>
       </section>
 
-      <section className="card">
-        <div className="tasks-toolbar">
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <div className="flex flex-col gap-3 md:flex-row">
           <input
+            className={`${inputClassName} md:flex-1`}
             value={query}
             placeholder="Search task..."
             onChange={(event) => {
@@ -213,39 +228,40 @@ export function TasksManagerClient() {
               setQuery(value);
             }}
           />
-          <button type="button" className="task-btn reset" onClick={resetTasksToDefault}>
+          <button type="button" className={secondaryButtonClass} onClick={resetTasksToDefault}>
             Reset to default
           </button>
         </div>
       </section>
 
-      <section className="card">
-        <h2>Tasks ({visibleTasks.length})</h2>
-        <table className="checklist-table">
-          <thead>
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <h2 className="mb-3 text-lg font-semibold">Tasks ({visibleTasks.length})</h2>
+        <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/40">
+        <table className="min-w-full text-sm">
+          <thead className="bg-zinc-950/70 text-zinc-400">
             <tr>
-              <th>Label</th>
-              <th>iLvl</th>
-              <th>Amount</th>
-              <th>Frequency</th>
-              <th>Scope</th>
-              <th>Days</th>
-              <th>Enabled</th>
-              <th>Actions</th>
+              <th className="border-b border-zinc-800 px-4 py-3 text-left font-semibold">Label</th>
+              <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold">iLvl</th>
+              <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold">Amount</th>
+              <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold">Frequency</th>
+              <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold">Scope</th>
+              <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold">Days</th>
+              <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold">Enabled</th>
+              <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {visibleTasks.map((task) => (
               <tr key={task.id}>
-                <td>{task.label}</td>
-                <td>
+                <td className="border-b border-zinc-800/80 px-4 py-3 text-left">{task.label}</td>
+                <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
                   {task.minIlvl}-{task.maxIlvl ?? 9999}
                 </td>
-                <td>{task.amount}</td>
-                <td>{task.frequency}</td>
-                <td>{task.scope}</td>
-                <td>{task.daysFilter.join(", ") || "-"}</td>
-                <td>
+                <td className="border-b border-zinc-800/80 px-3 py-3 text-center">{task.amount}</td>
+                <td className="border-b border-zinc-800/80 px-3 py-3 text-center">{task.frequency}</td>
+                <td className="border-b border-zinc-800/80 px-3 py-3 text-center">{task.scope}</td>
+                <td className="border-b border-zinc-800/80 px-3 py-3 text-center">{task.daysFilter.join(", ") || "-"}</td>
+                <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
                   <input
                     type="checkbox"
                     checked={task.enabled}
@@ -255,8 +271,8 @@ export function TasksManagerClient() {
                     }}
                   />
                 </td>
-                <td>
-                  <button type="button" className="task-btn reset" onClick={() => removeTask(task.id)}>
+                <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
+                  <button type="button" className={secondaryButtonClass} onClick={() => removeTask(task.id)}>
                     Delete
                   </button>
                 </td>
@@ -264,6 +280,7 @@ export function TasksManagerClient() {
             ))}
           </tbody>
         </table>
+        </div>
       </section>
     </div>
   );
