@@ -139,127 +139,130 @@ export function RosterClient() {
         <h1 className="text-2xl font-bold">Roster</h1>
       </div>
 
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
-        <h2 className="mb-3 text-lg font-semibold">Accounts</h2>
-        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="flex flex-col gap-1.5 text-sm">
-            Selected account
-            <select
-              className={selectClassName}
-              value={roster.selectedAccount}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                save({ ...roster, selectedAccount: value });
-              }}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 shadow-xl">
+          <h2 className="mb-3 text-base font-semibold">Accounts</h2>
+          <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2">
+            <label className="flex flex-col gap-1.5 text-sm">
+              Selected account
+              <select
+                className={selectClassName}
+                value={roster.selectedAccount}
+                onChange={(event) => {
+                  const { value } = event.currentTarget;
+                  save({ ...roster, selectedAccount: value });
+                }}
+              >
+                {roster.accounts.map((account) => (
+                  <option key={account.accountName} value={account.accountName}>
+                    {account.accountName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              New account name
+              <input
+                className={inputClassName}
+                value={newAccountName}
+                onChange={(event) => {
+                  const { value } = event.currentTarget;
+                  setNewAccountName(value);
+                }}
+              />
+            </label>
+            <button type="button" className={primaryButtonClass} onClick={addAccount}>
+              Add account
+            </button>
+            <button
+              type="button"
+              className={secondaryButtonClass}
+              onClick={removeAccount}
+              disabled={!roster.selectedAccount || roster.accounts.length <= 1}
             >
-              {roster.accounts.map((account) => (
-                <option key={account.accountName} value={account.accountName}>
-                  {account.accountName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            New account name
-            <input
-              className={inputClassName}
-              value={newAccountName}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                setNewAccountName(value);
-              }}
-            />
-          </label>
-          <button type="button" className={primaryButtonClass} onClick={addAccount}>
-            Add account
-          </button>
-          <button
-            type="button"
-            className={secondaryButtonClass}
-            onClick={removeAccount}
-            disabled={!roster.selectedAccount || roster.accounts.length <= 1}
-          >
-            Remove selected account
-          </button>
-        </div>
-      </section>
+              Remove selected account
+            </button>
+          </div>
+        </section>
 
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
-        <h2 className="mb-3 text-lg font-semibold">Add character</h2>
-        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <label className="flex flex-col gap-1.5 text-sm">
-            Account
-            <select
-              className={selectClassName}
-              value={roster.selectedAccount}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                save({ ...roster, selectedAccount: value });
-              }}
-            >
-              {roster.accounts.map((account) => (
-                <option key={account.accountName} value={account.accountName}>
-                  {account.accountName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            Name
-            <input
-              className={inputClassName}
-              value={form.name}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                setForm((previous) => ({ ...previous, name: value }));
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            Class
-            <select
-              className={selectClassName}
-              value={form.class}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                setForm((previous) => ({ ...previous, class: value }));
-              }}
-            >
-              {CLASS_OPTIONS.map((className) => (
-                <option key={className} value={className}>
-                  {className}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            iLvl
-            <input
-              className={inputClassName}
-              type="number"
-              value={form.ilvl}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                setForm((previous) => ({ ...previous, ilvl: Number(value) || 0 }));
-              }}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.weeklyGold}
-              onChange={(event) => {
-                const { checked } = event.currentTarget;
-                setForm((previous) => ({ ...previous, weeklyGold: checked }));
-              }}
-            />
-            Weekly gold
-          </label>
-          <button type="button" className={primaryButtonClass} onClick={addCharacter} disabled={!roster.selectedAccount}>
-            Add
-          </button>
-        </div>
-      </section>
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 shadow-xl">
+          <h2 className="mb-3 text-base font-semibold">Add character</h2>
+          <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2">
+            <label className="flex flex-col gap-1.5 text-sm">
+              Account
+              <select
+                className={selectClassName}
+                value={roster.selectedAccount}
+                onChange={(event) => {
+                  const { value } = event.currentTarget;
+                  save({ ...roster, selectedAccount: value });
+                }}
+              >
+                {roster.accounts.map((account) => (
+                  <option key={account.accountName} value={account.accountName}>
+                    {account.accountName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              Name
+              <input
+                className={inputClassName}
+                value={form.name}
+                onChange={(event) => {
+                  const { value } = event.currentTarget;
+                  setForm((previous) => ({ ...previous, name: value }));
+                }}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              Class
+              <select
+                className={selectClassName}
+                value={form.class}
+                onChange={(event) => {
+                  const { value } = event.currentTarget;
+                  setForm((previous) => ({ ...previous, class: value }));
+                }}
+              >
+                {CLASS_OPTIONS.map((className) => (
+                  <option key={className} value={className}>
+                    {className}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              iLvl
+              <input
+                className={inputClassName}
+                type="number"
+                step={10}
+                value={form.ilvl}
+                onChange={(event) => {
+                  const { value } = event.currentTarget;
+                  setForm((previous) => ({ ...previous, ilvl: Number(value) || 0 }));
+                }}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.weeklyGold}
+                onChange={(event) => {
+                  const { checked } = event.currentTarget;
+                  setForm((previous) => ({ ...previous, weeklyGold: checked }));
+                }}
+              />
+              Weekly gold
+            </label>
+            <button type="button" className={primaryButtonClass} onClick={addCharacter} disabled={!roster.selectedAccount}>
+              Add
+            </button>
+          </div>
+        </section>
+      </div>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
         <label className="flex items-center gap-2 text-sm text-zinc-300">
@@ -315,6 +318,7 @@ export function RosterClient() {
                     <input
                       className={`${inputClassName} w-24 text-center`}
                       type="number"
+                      step={10}
                       value={character.ilvl}
                       onChange={(event) => {
                         const { value } = event.currentTarget;

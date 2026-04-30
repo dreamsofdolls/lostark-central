@@ -306,8 +306,26 @@ export function ChecklistClient() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Checklist</h1>
+        <label className="flex items-center gap-2 text-sm text-zinc-300">
+          Account
+          <select
+            className={selectClassName}
+            value={accountFilter}
+            onChange={(event) => {
+              const { value } = event.currentTarget;
+              setAccountFilter(value);
+            }}
+          >
+            <option value="ALL">All (show all)</option>
+            {accountOptions.map((accountName) => (
+              <option key={accountName} value={accountName}>
+                {accountName}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
@@ -317,24 +335,6 @@ export function ChecklistClient() {
           <span>Weekly reset: {toDuration(getNextWeeklyReset(now), now)}</span>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm">
-          <label className="flex items-center gap-2">
-            Account
-            <select
-              className={selectClassName}
-              value={accountFilter}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                setAccountFilter(value);
-              }}
-            >
-              <option value="ALL">All (show all)</option>
-              {accountOptions.map((accountName) => (
-                <option key={accountName} value={accountName}>
-                  {accountName}
-                </option>
-              ))}
-            </select>
-          </label>
           <label className="flex items-center gap-2 text-zinc-300">
             <input
               type="checkbox"
