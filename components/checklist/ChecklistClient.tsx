@@ -86,6 +86,7 @@ export function ChecklistClient() {
   const [tasks, setTasks] = useState<LostarkTask[]>([]);
   const [settings, setSettings] = useState<SettingsState>(defaultSettingsState);
   const [now, setNow] = useState(Date.now());
+  const [accountFilter, setAccountFilter] = useState("ALL");
 
   useEffect(() => {
     setRoster(readRosterState());
@@ -120,6 +121,22 @@ export function ChecklistClient() {
     [roster.accounts]
   );
 
+  const accountOptions = useMemo(() => roster.accounts.map((account) => account.accountName), [roster.accounts]);
+
+  useEffect(() => {
+    if (accountFilter !== "ALL" && !accountOptions.includes(accountFilter)) {
+      setAccountFilter("ALL");
+    }
+  }, [accountFilter, accountOptions]);
+
+  const filteredRosterCharacters = useMemo(
+    () =>
+      accountFilter === "ALL"
+        ? rosterCharacters
+        : rosterCharacters.filter((entry) => entry.accountName === accountFilter),
+    [accountFilter, rosterCharacters]
+  );
+
   const rowsBySection = useMemo(() => {
     const next: Record<SectionKey, ChecklistRow[]> = {
       dailyCharacter: [],
@@ -133,14 +150,14 @@ export function ChecklistClient() {
     const eligibleTasks = tasks.filter(
       (task) =>
         task.enabled &&
-      rosterCharacters.some(
+      filteredRosterCharacters.some(
         ({ character }) =>
           character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY)
       )
     );
 
     for (const task of eligibleTasks) {
-      const fallbackEntry = rosterCharacters[0];
+      const fallbackEntry = filteredRosterCharacters[0];
       const available = isTaskAvailable(task, now);
       const doneByCharacter =
         task.scope === "ROSTER"
@@ -161,7 +178,7 @@ export function ChecklistClient() {
                 weeklyReset
               )
             ]
-          : rosterCharacters.map(({ accountName, character }) =>
+          : filteredRosterCharacters.map(({ accountName, character }) =>
               getDoneAmount(
                 task,
                 character,
@@ -176,7 +193,7 @@ export function ChecklistClient() {
       const trackedByCharacter =
         task.scope === "ROSTER"
           ? [true]
-          : rosterCharacters.map(({ accountName, character }) => {
+          : filteredRosterCharacters.map(({ accountName, character }) => {
               const key = getTrackingEntryKey(accountName, character.name, task.id);
               return settings.taskTracking[key] !== false;
             });
@@ -185,7 +202,7 @@ export function ChecklistClient() {
         task.scope === "ROSTER"
           ? doneByCharacter[0] >= task.amount
           : doneByCharacter.every((value, index) => {
-              const character = rosterCharacters[index]?.character;
+              const character = filteredRosterCharacters[index]?.character;
               if (!character) {
                 return true;
               }
@@ -198,7 +215,7 @@ export function ChecklistClient() {
             });
       const hasTrackedCharacter =
         task.scope === "ROSTER" ||
-        rosterCharacters.some(({ character }, index) => {
+        filteredRosterCharacters.some(({ character }, index) => {
           const doable =
             character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY);
           return trackedByCharacter[index] && doable;
@@ -230,15 +247,15 @@ export function ChecklistClient() {
     settings.hiddenOnCompletion,
     settings.taskTracking,
     tasks,
-    rosterCharacters,
+    filteredRosterCharacters,
     weeklyReset
   ]);
 
-  function updateCompletion(
+  function adjustCompletion(
     task: LostarkTask,
     character: Character,
     accountName: string,
-    done: boolean,
+    delta: number,
     clickEvent?: MouseEvent<HTMLButtonElement>
   ) {
     setCompletion((previous) => {
@@ -248,19 +265,12 @@ export function ChecklistClient() {
       const resetBoundary = getTaskResetBoundary(task, dailyReset, weeklyReset, weeklyReset, weeklyReset);
       const stale = existing && task.frequency !== "ONE_TIME" && existing.updated < resetBoundary;
       const oldAmount = stale ? 0 : existing?.amount ?? 0;
-
-      if (!done) {
-        next[key] = {
-          amount: 0,
-          updated: Date.now()
-        };
-      } else {
-        const setAllDone = Boolean(clickEvent?.ctrlKey);
-        next[key] = {
-          amount: setAllDone ? task.amount : Math.min(task.amount, oldAmount + 1),
-          updated: Date.now()
-        };
-      }
+      const setAllDone = delta > 0 && Boolean(clickEvent?.ctrlKey);
+      const nextAmount = setAllDone ? task.amount : Math.max(0, Math.min(task.amount, oldAmount + delta));
+      next[key] = {
+        amount: nextAmount,
+        updated: Date.now()
+      };
 
       writeCompletionMap(next);
       return next;
@@ -294,12 +304,29 @@ export function ChecklistClient() {
       </div>
 
       <div className="card checklist-meta">
-        <p>Ctrl + click vào nút task để đánh dấu đầy đủ số lần trong một lần nhấn.</p>
+        <p>Ctrl + click để full task, chuột phải để trừ 1 lần hoàn thành.</p>
         <div className="checklist-countdowns">
           <span>Daily reset: {toDuration(getNextDailyReset(now), now)}</span>
           <span>Weekly reset: {toDuration(getNextWeeklyReset(now), now)}</span>
         </div>
         <div className="checklist-options">
+          <label>
+            Account
+            <select
+              value={accountFilter}
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setAccountFilter(value);
+              }}
+            >
+              <option value="ALL">All (show all)</option>
+              {accountOptions.map((accountName) => (
+                <option key={accountName} value={accountName}>
+                  {accountName}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             <input
               type="checkbox"
@@ -313,6 +340,12 @@ export function ChecklistClient() {
           </label>
         </div>
       </div>
+
+      {filteredRosterCharacters.length === 0 ? (
+        <article className="card">
+          <p>Account này chưa có character.</p>
+        </article>
+      ) : null}
 
       {(
         [
@@ -338,7 +371,7 @@ export function ChecklistClient() {
                 <tr>
                   <th>Task</th>
                   {isCharacterScope ? (
-                    rosterCharacters.map(({ accountName, character }) => (
+                    filteredRosterCharacters.map(({ accountName, character }) => (
                       <th key={`${accountName}:${character.name}`}>{character.name} ({accountName})</th>
                     ))
                   ) : (
@@ -356,40 +389,39 @@ export function ChecklistClient() {
                           type="button"
                           className="task-btn"
                           onClick={(event) =>
-                            updateCompletion(
+                            adjustCompletion(
                               row.task,
-                              rosterCharacters[0]?.character ?? {
+                              filteredRosterCharacters[0]?.character ?? {
                                 name: "Roster",
                                 class: DEFAULT_CLASS_NAME,
                                 ilvl: 0,
                                 weeklyGold: false
                               },
-                              rosterCharacters[0]?.accountName ?? "Roster",
-                              true,
+                              filteredRosterCharacters[0]?.accountName ?? "Roster",
+                              1,
                               event
                             )
                           }
-                          disabled={row.doneByCharacter[0] >= row.task.amount}
+                          onContextMenu={(event) => {
+                            event.preventDefault();
+                            adjustCompletion(
+                              row.task,
+                              filteredRosterCharacters[0]?.character ?? {
+                                name: "Roster",
+                                class: DEFAULT_CLASS_NAME,
+                                ilvl: 0,
+                                weeklyGold: false
+                              },
+                              filteredRosterCharacters[0]?.accountName ?? "Roster",
+                              -1
+                            );
+                          }}
                         >
                           {row.doneByCharacter[0]}/{row.task.amount}
                         </button>
-                        <button
-                          type="button"
-                          className="task-btn reset"
-                          onClick={() =>
-                            updateCompletion(row.task, {
-                              name: "Roster",
-                              class: DEFAULT_CLASS_NAME,
-                              ilvl: 0,
-                              weeklyGold: false
-                            }, "Roster", false)
-                          }
-                        >
-                          Reset
-                        </button>
                       </td>
                     ) : (
-                      rosterCharacters.map(({ accountName, character }, index) => {
+                      filteredRosterCharacters.map(({ accountName, character }, index) => {
                         const doable =
                           character.ilvl >= row.task.minIlvl &&
                           character.ilvl < (row.task.maxIlvl ?? Number.POSITIVE_INFINITY);
@@ -406,17 +438,13 @@ export function ChecklistClient() {
                             <button
                               type="button"
                               className="task-btn"
-                              onClick={(event) => updateCompletion(row.task, character, accountName, true, event)}
-                              disabled={doneAmount >= row.task.amount}
+                              onClick={(event) => adjustCompletion(row.task, character, accountName, 1, event)}
+                              onContextMenu={(event) => {
+                                event.preventDefault();
+                                adjustCompletion(row.task, character, accountName, -1);
+                              }}
                             >
                               {doneAmount}/{row.task.amount}
-                            </button>
-                            <button
-                              type="button"
-                              className="task-btn reset"
-                              onClick={() => updateCompletion(row.task, character, accountName, false)}
-                            >
-                              Reset
                             </button>
                           </td>
                         );

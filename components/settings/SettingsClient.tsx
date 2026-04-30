@@ -104,7 +104,7 @@ export function SettingsClient() {
                             }`}
                           />
                           <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-white">
-                            {cell.tracked ? "On (Tracked)" : "Off (Ignored)"}
+                            {cell.tracked ? "Tracked" : "Ignored"}
                           </span>
                         </button>
                       </td>
