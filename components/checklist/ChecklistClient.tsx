@@ -144,11 +144,12 @@ export function ChecklistClient() {
         const raids = rows.filter((row) => getBucket(row.task) === "raids");
         const taskRows = rows.filter((row) => getBucket(row.task) === "tasks");
         const dailyRows = taskRows.filter((row) => row.task.frequency === "DAILY");
+        const role: CharacterView["role"] = characterIndex === 0 ? "main" : "sub";
 
         return {
           accountName: account.accountName,
           character,
-          role: characterIndex === 0 ? "main" : "sub",
+          role,
           raids,
           tasks: taskRows,
           raidsDone: raids.filter((row) => row.completed).length,
