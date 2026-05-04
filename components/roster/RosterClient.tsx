@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CLASS_OPTIONS, DEFAULT_CLASS_NAME, normalizeClassName } from "@/lib/lostark/classes";
-import { getClassIcon } from "@/lib/lostark/classIcons";
+import { ClassIcon } from "@/components/Icon";
 import { Character, RosterAccount, RosterState } from "@/lib/lostark/types";
 import { defaultRosterState, readRosterState, writeRosterState } from "@/lib/lostark/storage";
 
@@ -29,7 +29,6 @@ type ClassSelectProps = {
 
 function ClassSelect({ value, onChange, className }: ClassSelectProps) {
   const normalized = normalizeClassName(value);
-  const icon = getClassIcon(normalized);
 
   return (
     <div className="relative">
@@ -45,11 +44,7 @@ function ClassSelect({ value, onChange, className }: ClassSelectProps) {
         ))}
       </select>
       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-        {icon ? (
-          <img src={icon} alt={normalized} className="h-[18px] w-[18px] object-contain" />
-        ) : (
-          <span className="text-[10px] font-semibold text-zinc-300">{normalized.slice(0, 2).toUpperCase()}</span>
-        )}
+        <ClassIcon className={normalized} size="sm" />
       </span>
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">⌄</span>
     </div>

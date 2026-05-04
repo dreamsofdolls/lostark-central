@@ -2,7 +2,7 @@
 
 import { MouseEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getClassIcon } from "@/lib/lostark/classIcons";
+import { ClassIcon } from "@/components/Icon";
 import { isSideTask } from "@/lib/lostark/sideTasks";
 import { Character, CompletionMap, LostarkTask, SettingsState } from "@/lib/lostark/types";
 import {
@@ -310,16 +310,7 @@ export function ChecklistClient() {
                           } bg-[oklch(0.18_0.01_260)]`}
                           title={entry.character.class}
                         >
-                          {(() => {
-                            const icon = getClassIcon(entry.character.class);
-                            return icon ? (
-                              <img src={icon} alt={entry.character.class} className="h-7 w-7 object-contain" />
-                            ) : (
-                              <span className="text-xs font-semibold text-[oklch(0.95_0_0)]">
-                                {entry.character.class.slice(0, 2).toUpperCase()}
-                              </span>
-                            );
-                          })()}
+                          <ClassIcon className={entry.character.class} size="lg" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-[oklch(0.7_0_0)]">{entry.character.class}</p>
