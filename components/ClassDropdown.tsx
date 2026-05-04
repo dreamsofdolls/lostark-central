@@ -39,7 +39,14 @@ export function ClassDropdown({ value, onChange, className }: ClassDropdownProps
           <ClassIcon className={normalized} size="sm" />
           <span className="truncate">{normalized}</span>
         </div>
-        <span className={`shrink-0 text-xs text-zinc-400 transition ${isOpen ? "rotate-180" : ""}`}>⌄</span>
+        <svg
+          className={`h-4 w-4 shrink-0 text-zinc-400 transition ${isOpen ? "rotate-180" : ""}`}
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
 
       {isOpen && (

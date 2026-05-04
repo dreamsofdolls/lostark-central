@@ -199,8 +199,21 @@ export function RosterClient() {
       </div>
 
       {showAddAccountModal ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4" onClick={() => setShowAddAccountModal(false)}>
+          <div
+            className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Dismiss add account dialog"
+              className="absolute right-3 top-3 rounded-md p-1 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+              onClick={() => setShowAddAccountModal(false)}
+            >
+              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
             <h2 className="text-lg font-semibold">Add Account</h2>
             <label className="mt-4 flex flex-col gap-1.5 text-sm">
               Account name
@@ -227,8 +240,21 @@ export function RosterClient() {
       ) : null}
 
       {showAddCharacterModal ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
-          <div className="w-full max-w-xl rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4" onClick={() => setShowAddCharacterModal(false)}>
+          <div
+            className="relative w-full max-w-xl rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Dismiss add character dialog"
+              className="absolute right-3 top-3 rounded-md p-1 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+              onClick={() => setShowAddCharacterModal(false)}
+            >
+              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
             <h2 className="text-lg font-semibold">Add Character</h2>
             <div className="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-sm">
@@ -303,8 +329,21 @@ export function RosterClient() {
       ) : null}
 
       {pendingRemoveAccount ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4" onClick={() => setPendingRemoveAccount(null)}>
+          <div
+            className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Dismiss remove account dialog"
+              className="absolute right-3 top-3 rounded-md p-1 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+              onClick={() => setPendingRemoveAccount(null)}
+            >
+              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
             <h2 className="text-lg font-semibold">Remove account</h2>
             <p className="mt-2 text-sm text-zinc-300">
               Remove <span className="font-semibold text-white">{pendingRemoveAccount}</span> and all its characters?
