@@ -1,4 +1,3 @@
-import type { StaticImageData } from "next/image";
 import aeromancer from "@/app/assets/classes/aeromancer.svg";
 import arcanist from "@/app/assets/classes/arcanist.svg";
 import artillerist from "@/app/assets/classes/artillerist.svg";
@@ -29,7 +28,9 @@ import valkyrie from "@/app/assets/classes/valkyrie.svg";
 import wardancer from "@/app/assets/classes/wardancer.svg";
 import wildsoul from "@/app/assets/classes/wildsoul.svg";
 
-const CLASS_ICON_MAP: Record<string, StaticImageData> = {
+type ClassIconAsset = { src: string } | string;
+
+const CLASS_ICON_MAP: Record<string, ClassIconAsset> = {
   aeromancer,
   arcanist,
   artillerist,
@@ -65,6 +66,11 @@ function classToIconKey(className: string): string {
   return className.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-export function getClassIcon(className: string): StaticImageData | null {
-  return CLASS_ICON_MAP[classToIconKey(className)] ?? null;
+function toAssetUrl(asset: ClassIconAsset): string {
+  return typeof asset === "string" ? asset : asset.src;
+}
+
+export function getClassIcon(className: string): string | null {
+  const asset = CLASS_ICON_MAP[classToIconKey(className)];
+  return asset ? toAssetUrl(asset) : null;
 }

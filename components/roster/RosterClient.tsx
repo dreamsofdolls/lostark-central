@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { CLASS_OPTIONS, DEFAULT_CLASS_NAME, normalizeClassName } from "@/lib/lostark/classes";
 import { getClassIcon } from "@/lib/lostark/classIcons";
 import { Character, RosterAccount, RosterState } from "@/lib/lostark/types";
@@ -47,7 +46,7 @@ function ClassSelect({ value, onChange, className }: ClassSelectProps) {
       </select>
       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
         {icon ? (
-          <Image src={icon} alt={normalized} width={18} height={18} className="h-[18px] w-[18px] object-contain" />
+          <img src={icon} alt={normalized} className="h-[18px] w-[18px] object-contain" />
         ) : (
           <span className="text-[10px] font-semibold text-zinc-300">{normalized.slice(0, 2).toUpperCase()}</span>
         )}
