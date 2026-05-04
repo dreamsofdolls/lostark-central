@@ -2,7 +2,8 @@
 
 import { MouseEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { DEFAULT_CLASS_NAME } from "@/lib/lostark/classes";
+import Image from "next/image";
+import { getClassIcon } from "@/lib/lostark/classIcons";
 import { isSideTask } from "@/lib/lostark/sideTasks";
 import { Character, CompletionMap, LostarkTask, SettingsState } from "@/lib/lostark/types";
 import {
@@ -61,11 +62,6 @@ function toDuration(target: number, now: number): string {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
   return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
 }
 
 function getBucket(task: LostarkTask): TaskBucket {
@@ -308,13 +304,23 @@ export function ChecklistClient() {
                     <article key={tabKey} className={`${cardClass} p-3 hover:shadow-[0_0_0_1px_oklch(0.38_0.02_260)]`}>
                       <div className="flex items-start gap-3">
                         <div
-                          className={`grid h-10 w-10 place-items-center rounded-full font-semibold ${
+                          className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full border ${
                             entry.role === "main"
-                              ? "bg-[oklch(0.75_0.18_330)] text-[oklch(0.18_0.01_260)]"
-                              : "bg-[oklch(0.38_0.02_260)] text-[oklch(0.95_0_0)]"
-                          }`}
+                              ? "border-[oklch(0.75_0.18_330)]"
+                              : "border-[oklch(0.38_0.02_260)]"
+                          } bg-[oklch(0.18_0.01_260)]`}
+                          title={entry.character.class}
                         >
-                          {getInitials(entry.character.name)}
+                          {(() => {
+                            const icon = getClassIcon(entry.character.class);
+                            return icon ? (
+                              <Image src={icon} alt={entry.character.class} width={30} height={30} className="h-7 w-7 object-contain" />
+                            ) : (
+                              <span className="text-xs font-semibold text-[oklch(0.95_0_0)]">
+                                {entry.character.class.slice(0, 2).toUpperCase()}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-[oklch(0.7_0_0)]">{entry.character.class}</p>

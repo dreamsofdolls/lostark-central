@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { CLASS_OPTIONS, DEFAULT_CLASS_NAME, normalizeClassName } from "@/lib/lostark/classes";
+import { getClassIcon } from "@/lib/lostark/classIcons";
 import { Character, RosterAccount, RosterState } from "@/lib/lostark/types";
 import { defaultRosterState, readRosterState, writeRosterState } from "@/lib/lostark/storage";
 
@@ -19,6 +21,41 @@ const primaryButtonClass =
   "rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60";
 const secondaryButtonClass =
   "rounded-lg bg-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-60";
+
+type ClassSelectProps = {
+  value: string;
+  onChange: (nextClass: string) => void;
+  className?: string;
+};
+
+function ClassSelect({ value, onChange, className }: ClassSelectProps) {
+  const normalized = normalizeClassName(value);
+  const icon = getClassIcon(normalized);
+
+  return (
+    <div className="relative">
+      <select
+        className={`${selectClassName} appearance-none pl-10 pr-8 ${className ?? ""}`.trim()}
+        value={normalized}
+        onChange={(event) => onChange(event.currentTarget.value)}
+      >
+        {CLASS_OPTIONS.map((classNameOption) => (
+          <option key={classNameOption} value={classNameOption}>
+            {classNameOption}
+          </option>
+        ))}
+      </select>
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+        {icon ? (
+          <Image src={icon} alt={normalized} width={18} height={18} className="h-[18px] w-[18px] object-contain" />
+        ) : (
+          <span className="text-[10px] font-semibold text-zinc-300">{normalized.slice(0, 2).toUpperCase()}</span>
+        )}
+      </span>
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">⌄</span>
+    </div>
+  );
+}
 
 export function RosterClient() {
   const [roster, setRoster] = useState<RosterState>(defaultRosterState);
@@ -218,20 +255,12 @@ export function RosterClient() {
             </label>
             <label className="flex flex-col gap-1.5 text-sm">
               Class
-              <select
-                className={selectClassName}
+              <ClassSelect
                 value={form.class}
-                onChange={(event) => {
-                  const { value } = event.currentTarget;
-                  setForm((previous) => ({ ...previous, class: value }));
+                onChange={(nextClass) => {
+                  setForm((previous) => ({ ...previous, class: nextClass }));
                 }}
-              >
-                {CLASS_OPTIONS.map((className) => (
-                  <option key={className} value={className}>
-                    {className}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label className="flex flex-col gap-1.5 text-sm">
               iLvl
@@ -298,21 +327,14 @@ export function RosterClient() {
               {characters.map((character, index) => (
                 <tr key={`${character.name}-${index}`}>
                   <td className="border-b border-zinc-800/80 px-4 py-3 text-left">{character.name}</td>
-                  <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
-                    <select
-                      className={selectClassName}
+                   <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
+                    <ClassSelect
                       value={character.class}
-                      onChange={(event) => {
-                        const { value } = event.currentTarget;
-                        updateCharacter(index, { class: normalizeClassName(value) });
+                      className="min-w-[170px]"
+                      onChange={(nextClass) => {
+                        updateCharacter(index, { class: normalizeClassName(nextClass) });
                       }}
-                    >
-                      {CLASS_OPTIONS.map((className) => (
-                        <option key={className} value={className}>
-                          {className}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </td>
                   <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
                     <input
