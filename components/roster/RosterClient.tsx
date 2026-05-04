@@ -306,33 +306,24 @@ export function RosterClient() {
         {characters.length === 0 ? (
           <p className="text-zinc-400">Chua co character nao trong account nay.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/40">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr>
-                <th className="border-b border-zinc-800 px-4 py-3 text-left font-semibold text-zinc-400">Name</th>
-                <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold text-zinc-400">Class</th>
-                <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold text-zinc-400">iLvl</th>
-                <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold text-zinc-400">Weekly Gold</th>
-                <th className="border-b border-zinc-800 px-3 py-3 text-center font-semibold text-zinc-400">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {characters.map((character, index) => (
-                <tr key={`${character.name}-${index}`}>
-                  <td className="border-b border-zinc-800/80 px-4 py-3 text-left">{character.name}</td>
-                   <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
+          <div className="space-y-3">
+            {characters.map((character, index) => (
+              <article key={`${character.name}-${index}`} className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(170px,220px)_120px_auto_auto] md:items-end">
+                  <p className="truncate text-sm font-medium text-zinc-100 md:pb-2">{character.name}</p>
+                  <label className="flex flex-col gap-1.5 text-sm">
+                    Class
                     <ClassSelect
                       value={character.class}
-                      className="min-w-[170px]"
                       onChange={(nextClass) => {
                         updateCharacter(index, { class: normalizeClassName(nextClass) });
                       }}
                     />
-                  </td>
-                  <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
+                  </label>
+                  <label className="flex flex-col gap-1.5 text-sm">
+                    iLvl
                     <input
-                      className={`${inputClassName} w-24 text-center`}
+                      className={`${inputClassName} text-center`}
                       type="number"
                       step={10}
                       value={character.ilvl}
@@ -341,8 +332,8 @@ export function RosterClient() {
                         updateCharacter(index, { ilvl: Number(value) || character.ilvl });
                       }}
                     />
-                  </td>
-                  <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
+                  </label>
+                  <label className="flex items-center gap-2 pt-0 text-sm md:pb-2">
                     <input
                       type="checkbox"
                       checked={character.weeklyGold}
@@ -351,16 +342,14 @@ export function RosterClient() {
                         updateCharacter(index, { weeklyGold: checked });
                       }}
                     />
-                  </td>
-                  <td className="border-b border-zinc-800/80 px-3 py-3 text-center">
-                    <button type="button" className={secondaryButtonClass} onClick={() => removeCharacter(index)}>
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    Weekly Gold
+                  </label>
+                  <button type="button" className={`${secondaryButtonClass} md:mb-0.5`} onClick={() => removeCharacter(index)}>
+                    Remove
+                  </button>
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </section>
