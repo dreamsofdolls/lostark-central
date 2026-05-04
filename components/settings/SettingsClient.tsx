@@ -65,10 +65,21 @@ export function SettingsClient() {
       <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/80 shadow-xl">
         <div className="border-b border-zinc-800 px-5 py-4">
           <h2 className="text-lg font-semibold">Task tracking</h2>
-          <p className="mt-1 text-sm text-zinc-400">Bat/tat tracking theo tung character cho checklist.</p>
+          <p className="mt-1 text-sm text-zinc-400">Bật/tắt theo dõi cho từng character trong checklist.</p>
+          <label className="mt-3 inline-flex items-center gap-2 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              checked={settings.hiddenOnCompletion}
+              onChange={(event) => {
+                const { checked } = event.currentTarget;
+                save({ hiddenOnCompletion: checked });
+              }}
+            />
+            Hide completed tasks
+          </label>
         </div>
         {characterEntries.length === 0 ? (
-          <p className="p-5 text-sm text-zinc-400">Chua co character trong roster.</p>
+          <p className="p-5 text-sm text-zinc-400">Chưa có character trong roster.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -100,7 +111,7 @@ export function SettingsClient() {
                         >
                           <span
                             className={`h-6 w-6 rounded-full bg-white shadow transition ${
-                              cell.tracked ? "translate-x-0" : "translate-x-[76px]"
+                              cell.tracked ? "translate-x-[76px]" : "translate-x-0"
                             }`}
                           />
                           <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-white">

@@ -12,8 +12,7 @@ import {
   readRosterState,
   readSettingsState,
   readTasksState,
-  writeCompletionMap,
-  writeSettingsState
+  writeCompletionMap
 } from "@/lib/lostark/storage";
 import { getCompletionEntryKey, getDoneAmount, getTrackingEntryKey, isTaskAvailable, getTaskResetBoundary } from "@/lib/lostark/checklist";
 import { getLastDailyReset, getLastWeeklyReset, getNextDailyReset, getNextWeeklyReset } from "@/lib/lostark/time";
@@ -401,23 +400,6 @@ export function ChecklistClient() {
         </section>
       ))}
 
-      <section className={`${cardClass} p-4`}>
-        <label className="flex items-center gap-2 text-sm text-[oklch(0.7_0_0)]">
-          <input
-            type="checkbox"
-            checked={settings.hiddenOnCompletion}
-            onChange={(event) => {
-              const { checked } = event.currentTarget;
-              setSettings((previous) => {
-                const next = { ...previous, hiddenOnCompletion: checked };
-                writeSettingsState(next);
-                return next;
-              });
-            }}
-          />
-          Hide completed tasks
-        </label>
-      </section>
     </div>
   );
 }
