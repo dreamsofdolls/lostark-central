@@ -3,6 +3,7 @@
 import { MouseEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DEFAULT_CLASS_NAME } from "@/lib/lostark/classes";
+import { isSideTask } from "@/lib/lostark/sideTasks";
 import { Character, CompletionMap, LostarkTask, SettingsState } from "@/lib/lostark/types";
 import {
   defaultRosterState,
@@ -69,6 +70,9 @@ function getInitials(name: string): string {
 }
 
 function getBucket(task: LostarkTask): TaskBucket {
+  if (isSideTask(task)) {
+    return "tasks";
+  }
   if (task.frequency === "WEEKLY" || task.frequency === "BIWEEKLY" || task.frequency === "BIWEEKLY_OFFSET") {
     return "raids";
   }
