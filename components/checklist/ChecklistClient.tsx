@@ -301,13 +301,9 @@ export function ChecklistClient() {
                   const rows = tab === "raids" ? entry.raids : entry.tasks;
                   return (
                     <article key={tabKey} className={`${cardClass} p-3 hover:shadow-[0_0_0_1px_oklch(0.38_0.02_260)]`}>
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-center gap-2">
                         <div
-                          className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full border ${
-                            entry.role === "main"
-                              ? "border-[oklch(0.75_0.18_330)]"
-                              : "border-[oklch(0.38_0.02_260)]"
-                          } bg-[oklch(0.18_0.01_260)]`}
+                          className={`h-10 w-10`}
                           title={entry.character.class}
                         >
                           <ClassIcon className={entry.character.class} size="lg" />
