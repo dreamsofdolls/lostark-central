@@ -9,31 +9,31 @@ export const toolRoutes: ToolRoute[] = [
   {
     href: "/checklist",
     title: "Checklist",
-    description: "Theo doi cong viec daily/weekly cho roster.",
+    description: "Theo dõi công việc daily/weekly cho roster.",
     group: "Helpers"
   },
   {
     href: "/friends",
     title: "Friends",
-    description: "Theo doi ban be va tinh trang invite.",
+    description: "Theo dõi bạn bè và tình trạng invite.",
     group: "Party Helpers"
   },
   {
     href: "/roster",
     title: "Roster",
-    description: "Quan ly danh sach character trong account.",
+    description: "Quản lý danh sách character trong account.",
     group: "Configuration"
   },
   {
     href: "/tasks-manager",
     title: "Tasks Manager",
-    description: "Tuy chinh bo task va cau hinh checklist.",
+    description: "Tùy chỉnh bộ task và cấu hình checklist.",
     group: "Configuration"
   },
   {
     href: "/settings",
     title: "Settings",
-    description: "Cau hinh app, vung va thong tin nguoi dung.",
+    description: "Cấu hình app, vùng và thông tin người dùng.",
     group: "Configuration"
   }
 ];
