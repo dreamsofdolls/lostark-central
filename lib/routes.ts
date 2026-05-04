@@ -27,13 +27,13 @@ export const toolRoutes: ToolRoute[] = [
   {
     href: "/tasks-manager",
     title: "Tasks Manager",
-    description: "Tùy chỉnh bộ task và cấu hình checklist.",
+    description: "Setup bộ task và cấu hình checklist.",
     group: "Configuration"
   },
   {
     href: "/settings",
     title: "Settings",
-    description: "Cấu hình app, vùng và thông tin người dùng.",
+    description: "Setup task tracking và các tùy chọn khác.",
     group: "Configuration"
   }
 ];

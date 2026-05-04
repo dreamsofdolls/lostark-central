@@ -25,10 +25,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   Home
                 </Link>
                 <Link
+                  href="/checklist"
+                  className="rounded-lg px-3 py-2 text-[oklch(0.7_0_0)] transition hover:bg-white/5 hover:text-white"
+                >
+                  Checklist
+                </Link>
+                <Link
+                  href="/friends"
+                  className="rounded-lg px-3 py-2 text-[oklch(0.7_0_0)] transition hover:bg-white/5 hover:text-white"
+                >
+                  Friends
+                </Link>
+                <Link
                   href="/roster"
                   className="rounded-lg px-3 py-2 text-[oklch(0.7_0_0)] transition hover:bg-white/5 hover:text-white"
                 >
-                  Characters
+                  Manage Roster
                 </Link>
                 <Link
                   href="/settings"
