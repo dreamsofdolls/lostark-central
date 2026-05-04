@@ -29,6 +29,7 @@ export function RosterClient() {
   const [newAccountName, setNewAccountName] = useState("");
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
   const [showAddCharacterModal, setShowAddCharacterModal] = useState(false);
+  const [pendingRemoveAccount, setPendingRemoveAccount] = useState<string | null>(null);
   const [addCharacterAccount, setAddCharacterAccount] = useState("");
   const [accountFilter, setAccountFilter] = useState("ALL");
 
@@ -118,9 +119,6 @@ export function RosterClient() {
     if (!accountName || roster.accounts.length <= 1) {
       return;
     }
-    if (!window.confirm(`Remove account "${accountName}" and all its characters?`)) {
-      return;
-    }
     const nextAccounts = roster.accounts.filter((account) => account.accountName !== accountName);
     const fallbackAccount = nextAccounts[0]?.accountName ?? "";
     save({
@@ -134,6 +132,7 @@ export function RosterClient() {
     if (accountFilter === accountName) {
       setAccountFilter("ALL");
     }
+    setPendingRemoveAccount(null);
   }
 
   function updateCharacter(accountName: string, index: number, patch: Partial<Character>) {
@@ -303,6 +302,25 @@ export function RosterClient() {
         </div>
       ) : null}
 
+      {pendingRemoveAccount ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold">Remove account</h2>
+            <p className="mt-2 text-sm text-zinc-300">
+              Remove <span className="font-semibold text-white">{pendingRemoveAccount}</span> and all its characters?
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" className={secondaryButtonClass} onClick={() => setPendingRemoveAccount(null)}>
+                Cancel
+              </button>
+              <button type="button" className={dangerButtonClass} onClick={() => removeAccount(pendingRemoveAccount)}>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
         <label className="flex items-center gap-2 text-sm text-zinc-300">
           <input
@@ -321,6 +339,16 @@ export function RosterClient() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">Characters</h2>
           <div className="flex items-center gap-2">
+            {accountFilter !== "ALL" ? (
+                <button
+                  type="button"
+                  className={dangerButtonClass}
+                  disabled={roster.accounts.length <= 1}
+                  onClick={() => setPendingRemoveAccount(accountFilter)}
+                >
+                  Remove
+                </button>
+            ) : null}
             <select
               className={selectClassName}
               value={accountFilter}
@@ -333,16 +361,6 @@ export function RosterClient() {
                 </option>
               ))}
             </select>
-            {accountFilter !== "ALL" ? (
-              <button
-                type="button"
-                className={dangerButtonClass}
-                disabled={roster.accounts.length <= 1}
-                onClick={() => removeAccount(accountFilter)}
-              >
-                Remove
-              </button>
-            ) : null}
           </div>
         </div>
         {filteredCharacters.length === 0 ? (
