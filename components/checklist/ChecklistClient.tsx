@@ -289,7 +289,14 @@ export function ChecklistClient() {
                 </span>
               </div>
             </div>
-            <span className={`text-lg transition ${openAccounts[account.accountName] ? "rotate-180" : ""}`}>⌄</span>
+            <svg
+              className={`h-5 w-5 text-[oklch(0.7_0_0)] transition ${openAccounts[account.accountName] ? "rotate-180" : ""}`}
+              viewBox="0 0 20 20"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
 
           {openAccounts[account.accountName] ? (

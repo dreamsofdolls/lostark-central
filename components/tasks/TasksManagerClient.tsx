@@ -29,6 +29,7 @@ const defaultForm: TaskForm = {
 const inputClassName =
   "rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30";
 const selectClassName = inputClassName;
+const selectWithChevronClass = `${selectClassName} appearance-none pr-9`;
 const primaryButtonClass =
   "rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60";
 const secondaryButtonClass =
@@ -100,6 +101,14 @@ export function TasksManagerClient() {
     return tasks.filter((task) => task.label.toLowerCase().includes(keyword));
   }, [query, tasks]);
 
+  function ChevronIcon() {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 text-zinc-400" aria-hidden="true">
+        <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -159,34 +168,44 @@ export function TasksManagerClient() {
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
             Frequency
-            <select
-              className={selectClassName}
-              value={form.frequency}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                setForm((previous) => ({ ...previous, frequency: value as TaskFrequency }));
-              }}
-            >
-              <option value="DAILY">DAILY</option>
-              <option value="WEEKLY">WEEKLY</option>
-              <option value="BIWEEKLY">BIWEEKLY</option>
-              <option value="BIWEEKLY_OFFSET">BIWEEKLY_OFFSET</option>
-              <option value="ONE_TIME">ONE_TIME</option>
-            </select>
+            <div className="relative">
+              <select
+                className={selectWithChevronClass}
+                value={form.frequency}
+                onChange={(event) => {
+                  const { value } = event.currentTarget;
+                  setForm((previous) => ({ ...previous, frequency: value as TaskFrequency }));
+                }}
+              >
+                <option value="DAILY">DAILY</option>
+                <option value="WEEKLY">WEEKLY</option>
+                <option value="BIWEEKLY">BIWEEKLY</option>
+                <option value="BIWEEKLY_OFFSET">BIWEEKLY_OFFSET</option>
+                <option value="ONE_TIME">ONE_TIME</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                <ChevronIcon />
+              </span>
+            </div>
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
             Scope
-            <select
-              className={selectClassName}
-              value={form.scope}
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                setForm((previous) => ({ ...previous, scope: value as TaskScope }));
-              }}
-            >
-              <option value="CHARACTER">CHARACTER</option>
-              <option value="ROSTER">ROSTER</option>
-            </select>
+            <div className="relative">
+              <select
+                className={selectWithChevronClass}
+                value={form.scope}
+                onChange={(event) => {
+                  const { value } = event.currentTarget;
+                  setForm((previous) => ({ ...previous, scope: value as TaskScope }));
+                }}
+              >
+                <option value="CHARACTER">CHARACTER</option>
+                <option value="ROSTER">ROSTER</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                <ChevronIcon />
+              </span>
+            </div>
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
             Day filter (0-6, comma)

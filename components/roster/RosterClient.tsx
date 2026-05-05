@@ -22,6 +22,7 @@ const secondaryButtonClass =
   "rounded-lg bg-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-60";
 const dangerButtonClass =
   "rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60";
+const selectWithChevronClass = `${selectClassName} appearance-none pr-9`;
 
 export function RosterClient() {
   const [roster, setRoster] = useState<RosterState>(defaultRosterState);
@@ -179,6 +180,14 @@ export function RosterClient() {
   const filteredCharacters =
     accountFilter === "ALL" ? characters : characters.filter((entry) => entry.accountName === accountFilter);
 
+  function ChevronIcon() {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 text-zinc-400" aria-hidden="true">
+        <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -259,17 +268,22 @@ export function RosterClient() {
             <div className="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-sm">
                 Account
-                <select
-                  className={selectClassName}
-                  value={addCharacterAccount}
-                  onChange={(event) => setAddCharacterAccount(event.currentTarget.value)}
-                >
-                  {roster.accounts.map((account) => (
-                    <option key={account.accountName} value={account.accountName}>
-                      {account.accountName}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className={selectWithChevronClass}
+                    value={addCharacterAccount}
+                    onChange={(event) => setAddCharacterAccount(event.currentTarget.value)}
+                  >
+                    {roster.accounts.map((account) => (
+                      <option key={account.accountName} value={account.accountName}>
+                        {account.accountName}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                    <ChevronIcon />
+                  </span>
+                </div>
               </label>
               <label className="flex flex-col gap-1.5 text-sm">
                 Name
@@ -388,18 +402,23 @@ export function RosterClient() {
                   Remove
                 </button>
             ) : null}
-            <select
-              className={selectClassName}
-              value={accountFilter}
-              onChange={(event) => setAccountFilter(event.currentTarget.value)}
-            >
-              <option value="ALL">All</option>
-              {roster.accounts.map((account) => (
-                <option key={account.accountName} value={account.accountName}>
-                  {account.accountName}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                className={selectWithChevronClass}
+                value={accountFilter}
+                onChange={(event) => setAccountFilter(event.currentTarget.value)}
+              >
+                <option value="ALL">All</option>
+                {roster.accounts.map((account) => (
+                  <option key={account.accountName} value={account.accountName}>
+                    {account.accountName}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                <ChevronIcon />
+              </span>
+            </div>
           </div>
         </div>
         {filteredCharacters.length === 0 ? (
