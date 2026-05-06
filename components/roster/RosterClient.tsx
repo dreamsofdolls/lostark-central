@@ -458,15 +458,14 @@ export function RosterClient() {
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="flex items-start justify-between border-b border-[oklch(0.38_0.02_260)] p-4">
-                    <div className="flex min-w-0 items-start gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
                       <div className="h-9 w-9">
                         <ClassIcon className={entry.character.class} size="lg" />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-xs text-zinc-400">{entry.accountName}</p>
                         <p className="truncate text-sm text-zinc-300">{entry.character.class}</p>
                         <p className="truncate text-xl font-semibold leading-6 text-white">{entry.character.name}</p>
-                        <p className="mt-1 text-xs text-zinc-400">⚔ {entry.character.ilvl}</p>
+                        <p className="mt-1 text-sm text-zinc-400">⚔ {entry.character.ilvl}</p>
                       </div>
                     </div>
                     <button
