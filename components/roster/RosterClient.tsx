@@ -433,24 +433,20 @@ export function RosterClient() {
         </div>
       </div>
 
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
-        <h2 className="mb-3 text-lg font-semibold">Accounts</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {roster.accounts.map((account) => (
-            <article key={account.accountName} className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
-              <p className="truncate text-sm font-semibold text-zinc-100">{account.accountName}</p>
-              <p className="mt-1 text-xs text-zinc-400">Characters: {account.characters.length}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
-        {characterEntries.length === 0 ? (
+      {characterEntries.length === 0 ? (
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
           <p className="text-zinc-400">Chua co character nao trong roster.</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {characterEntries.map((entry) => {
+        </section>
+      ) : (
+        roster.accounts.map((account) => (
+          <section key={account.accountName} className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/80 shadow-xl">
+            <div className="border-b border-zinc-800 px-5 py-4">
+              <h2 className="text-lg font-semibold">{account.accountName}</h2>
+            </div>
+            <div className="p-5">
+              <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {account.characters.map((character, index) => {
+                  const entry: CharacterEntry = { accountName: account.accountName, index, character };
               const raids = entry.character.raids ?? [];
               const key = `${entry.accountName}:${entry.character.name}:${entry.index}`;
               const activeTab = activeTabs[key] ?? "raids";
@@ -458,7 +454,7 @@ export function RosterClient() {
               return (
                 <article
                   key={key}
-                  className="overflow-hidden rounded-xl border border-[oklch(0.38_0.02_260)] bg-[oklch(0.23_0.015_260)]"
+                  className="self-start overflow-hidden rounded-xl border border-[oklch(0.38_0.02_260)] bg-[oklch(0.23_0.015_260)]"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="flex items-start justify-between border-b border-[oklch(0.38_0.02_260)] p-4">
@@ -560,10 +556,12 @@ export function RosterClient() {
                   )}
                 </article>
               );
-            })}
-          </div>
-        )}
-      </section>
+                })}
+              </div>
+            </div>
+          </section>
+        ))
+      )}
 
       {showAddAccountModal ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4" onClick={() => setShowAddAccountModal(false)}>
