@@ -27,6 +27,13 @@ export type Character = {
   ilvl: number;
   weeklyGold: boolean;
   note?: string;
+  raids?: CharacterRaid[];
+};
+
+export type CharacterRaid = {
+  id: string;
+  name: string;
+  difficulty: string;
 };
 
 export type RosterAccount = {

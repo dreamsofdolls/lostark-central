@@ -44,6 +44,7 @@ Phase 1 migration tu `Lostark-helper-master` (Angular/Nx) sang Next.js de deploy
   - `GET /api/user/state?discordId=...`
   - `POST /api/user/state` voi body `{ discordId, state }`
   - Dong bo `accounts.characters.sideTasks` cho 3 task: `Solo Shop`, `Paradise`, `Howl's Hourglass` de dung chung format voi raid-bot.
+  - Dong bo `accounts.characters.isGoldEarner` + `accounts.characters.assignedRaids` tu roster web de nhat quan voi raid-bot khi dung chung MongoDB.
 
 Env can thiet:
 

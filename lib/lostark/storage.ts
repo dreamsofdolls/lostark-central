@@ -2,6 +2,7 @@ import { defaultTasks } from "@/lib/lostark/defaultTasks";
 import { normalizeClassName } from "@/lib/lostark/classes";
 import {
   Character,
+  CharacterRaid,
   CompletionMap,
   LostarkTask,
   RosterAccount,
@@ -72,12 +73,32 @@ export function readRosterState(): RosterState {
   );
   const normalizeCharacter = (character: unknown): Character => {
     const raw = (character ?? {}) as Partial<Character> & { class?: string };
+    const raids = Array.isArray(raw.raids)
+      ? raw.raids
+          .map((raid): CharacterRaid | null => {
+            if (!raid || typeof raid !== "object") {
+              return null;
+            }
+            const raidRaw = raid as Partial<CharacterRaid>;
+            const name = String(raidRaw.name ?? "").trim();
+            if (!name) {
+              return null;
+            }
+            return {
+              id: String(raidRaw.id ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+              name,
+              difficulty: String(raidRaw.difficulty ?? "N").trim() || "N"
+            };
+          })
+          .filter((raid): raid is CharacterRaid => Boolean(raid))
+      : [];
     return {
       name: String(raw.name ?? "").trim(),
       class: normalizeClassName(raw.class),
       ilvl: Number(raw.ilvl ?? 0),
       weeklyGold: Boolean(raw.weeklyGold),
-      note: typeof raw.note === "string" ? raw.note : undefined
+      note: typeof raw.note === "string" ? raw.note : undefined,
+      raids
     };
   };
 

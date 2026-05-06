@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLastDailyReset, getLastWeeklyReset } from "@/lib/lostark/time";
 import { isSideTask, isSideTaskLabel } from "@/lib/lostark/sideTasks";
-import { Character, CompletionMap, LostarkTask, RosterState } from "@/lib/lostark/types";
+import { Character, CharacterRaid, CompletionMap, LostarkTask, RosterState } from "@/lib/lostark/types";
 import { connectDB } from "@/lib/mongo/db";
 import { User } from "@/lib/mongo/models/User";
 
@@ -27,6 +27,8 @@ type CharacterDocument = {
   name?: unknown;
   class?: unknown;
   itemLevel?: unknown;
+  isGoldEarner?: unknown;
+  assignedRaids?: unknown;
   sideTasks?: unknown;
 };
 
@@ -39,6 +41,89 @@ type UserWithAccounts = {
   centralWebState?: StatePayload | null;
   accounts?: unknown;
 };
+
+type RaidKey = "armoche" | "kazeros" | "serca";
+
+type AssignedRaidsDocument = Record<RaidKey, Record<string, unknown>>;
+
+const RAID_META: Record<RaidKey, { defaultName: string; tokens: string[] }> = {
+  serca: { defaultName: "Act 3: Mordum", tokens: ["mordum", "serca"] },
+  armoche: { defaultName: "Act 4: Armoche", tokens: ["armoche"] },
+  kazeros: { defaultName: "Final Act: Kazeros", tokens: ["kazeros"] }
+};
+
+const RAID_KEYS: RaidKey[] = ["serca", "armoche", "kazeros"];
+
+function normalizeRaidDifficulty(input: unknown): string {
+  const value = String(input ?? "").trim().toUpperCase();
+  if (!value) {
+    return "N";
+  }
+  return value;
+}
+
+function toRaidKey(name: string): RaidKey | null {
+  const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  for (const key of RAID_KEYS) {
+    if (RAID_META[key].tokens.some((token) => normalized.includes(token))) {
+      return key;
+    }
+  }
+  return null;
+}
+
+function parseAssignedRaids(input: unknown): CharacterRaid[] {
+  if (!input || typeof input !== "object") {
+    return [];
+  }
+  const source = input as Record<string, unknown>;
+  const raids: CharacterRaid[] = [];
+  for (const key of RAID_KEYS) {
+    const rawEntry = source[key];
+    if (!rawEntry || typeof rawEntry !== "object") {
+      continue;
+    }
+    const entry = rawEntry as Record<string, unknown>;
+    if (Object.keys(entry).length === 0) {
+      continue;
+    }
+    const customName = String(entry.name ?? "").trim();
+    raids.push({
+      id: `mongo-${key}`,
+      name: customName || RAID_META[key].defaultName,
+      difficulty: normalizeRaidDifficulty(entry.difficulty ?? entry.mode ?? entry.level)
+    });
+  }
+  return raids;
+}
+
+function buildAssignedRaidsDocument(
+  raids: CharacterRaid[] | undefined,
+  existingAssignedRaids: unknown
+): AssignedRaidsDocument {
+  const existing = existingAssignedRaids && typeof existingAssignedRaids === "object"
+    ? (existingAssignedRaids as Record<string, unknown>)
+    : {};
+  const next: AssignedRaidsDocument = {
+    serca: existing.serca && typeof existing.serca === "object" ? { ...(existing.serca as Record<string, unknown>) } : {},
+    armoche: existing.armoche && typeof existing.armoche === "object" ? { ...(existing.armoche as Record<string, unknown>) } : {},
+    kazeros: existing.kazeros && typeof existing.kazeros === "object" ? { ...(existing.kazeros as Record<string, unknown>) } : {}
+  };
+
+  for (const raid of raids ?? []) {
+    const key = toRaidKey(raid.name);
+    if (!key) {
+      continue;
+    }
+    next[key] = {
+      ...next[key],
+      name: raid.name,
+      difficulty: normalizeRaidDifficulty(raid.difficulty),
+      selected: true
+    };
+  }
+  return next;
+}
 
 function parseRosterState(input: unknown): RosterState | null {
   if (!input || typeof input !== "object") {
@@ -69,11 +154,31 @@ function parseRosterState(input: unknown): RosterState | null {
               if (!name) {
                 return null;
               }
+              const raids = Array.isArray(raw.raids)
+                ? raw.raids
+                    .map((raid): CharacterRaid | null => {
+                      if (!raid || typeof raid !== "object") {
+                        return null;
+                      }
+                      const raidRaw = raid as Partial<CharacterRaid>;
+                      const raidName = String(raidRaw.name ?? "").trim();
+                      if (!raidName) {
+                        return null;
+                      }
+                      return {
+                        id: String(raidRaw.id ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+                        name: raidName,
+                        difficulty: String(raidRaw.difficulty ?? "N").trim() || "N"
+                      };
+                    })
+                    .filter((raid): raid is CharacterRaid => Boolean(raid))
+                : [];
               const normalizedCharacter: Character = {
                 name,
                 class: String(raw.class ?? "").trim(),
                 ilvl: Number(raw.ilvl ?? 0),
                 weeklyGold: Boolean(raw.weeklyGold),
+                raids,
                 ...(typeof raw.note === "string" ? { note: raw.note } : {})
               };
               return normalizedCharacter;
@@ -208,8 +313,43 @@ function mergeSideTasksIntoCompletion(
 
   const accountDocuments = parseAccounts(accountsRaw);
   const completion = parseCompletion(state.completion);
+  const mergedRosterAccounts = roster.accounts.map((rosterAccount) => {
+    const accountDocument = accountDocuments.find(
+      (account) => String(account.accountName ?? "").trim() === rosterAccount.accountName
+    );
+    const characterDocuments = Array.isArray(accountDocument?.characters)
+      ? (accountDocument.characters as CharacterDocument[])
+      : [];
+    const characters = rosterAccount.characters.map((character) => {
+      const characterDocument = characterDocuments.find(
+        (item) => String(item?.name ?? "").trim() === character.name
+      );
+      if (!characterDocument) {
+        return character;
+      }
+      const dbRaids = parseAssignedRaids(characterDocument.assignedRaids);
+      const dbItemLevel = Number(characterDocument.itemLevel);
+      return {
+        ...character,
+        ilvl: Number.isFinite(dbItemLevel) ? dbItemLevel : character.ilvl,
+        weeklyGold:
+          typeof characterDocument.isGoldEarner === "boolean"
+            ? characterDocument.isGoldEarner
+            : character.weeklyGold,
+        raids: character.raids && character.raids.length > 0 ? character.raids : dbRaids
+      } satisfies Character;
+    });
+    return {
+      ...rosterAccount,
+      characters
+    };
+  });
+  const mergedRoster: RosterState = {
+    ...roster,
+    accounts: mergedRosterAccounts
+  };
 
-  for (const rosterAccount of roster.accounts) {
+  for (const rosterAccount of mergedRoster.accounts) {
     const accountDocument = accountDocuments.find(
       (account) => String(account.accountName ?? "").trim() === rosterAccount.accountName
     );
@@ -242,7 +382,7 @@ function mergeSideTasksIntoCompletion(
     }
   }
 
-  return { ...state, completion };
+  return { ...state, roster: mergedRoster, completion };
 }
 
 function buildMergedAccounts(
@@ -257,9 +397,6 @@ function buildMergedAccounts(
   const allTasks = parseTasks(state.tasks);
   const completion = parseCompletion(state.completion);
   const sideTaskDefs = allTasks.filter((task) => task.enabled && isSideTask(task));
-  if (!sideTaskDefs.length) {
-    return null;
-  }
 
   const existingAccounts = parseAccounts(existingAccountsRaw);
   const existingAccountMap = new Map(
@@ -277,7 +414,9 @@ function buildMergedAccounts(
       const existingCharacter = existingCharacters.find((item) => String(item.name ?? "").trim() === character.name);
       const existingSideTasks = parseSideTasks(existingCharacter?.sideTasks);
       const sideTaskSet = new Set(sideTaskDefs.map((task) => task.id));
-      const preserved = existingSideTasks.filter((task) => !sideTaskSet.has(task.taskId) && !isSideTaskLabel(task.name));
+      const preserved = sideTaskDefs.length
+        ? existingSideTasks.filter((task) => !sideTaskSet.has(task.taskId) && !isSideTaskLabel(task.name))
+        : existingSideTasks;
       const mapped = sideTaskDefs.map((task) => {
         const completionKey = `${rosterAccount.accountName}:${character.name}:${task.id}`;
         const completionEntry = completion[completionKey];
@@ -303,6 +442,8 @@ function buildMergedAccounts(
         name: character.name,
         class: character.class,
         itemLevel: Number.isFinite(character.ilvl) ? character.ilvl : 0,
+        isGoldEarner: Boolean(character.weeklyGold),
+        assignedRaids: buildAssignedRaidsDocument(character.raids, existingCharacter?.assignedRaids),
         sideTasks: [...preserved, ...mapped]
       } satisfies CharacterDocument;
     });
