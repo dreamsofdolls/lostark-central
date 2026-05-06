@@ -624,7 +624,10 @@ export function RosterClient() {
                 <input
                   className={inputClassName}
                   value={newCharacterForm.name}
-                  onChange={(event) => setNewCharacterForm((previous) => ({ ...previous, name: event.currentTarget.value }))}
+                  onChange={(event) => {
+                    const { value } = event.currentTarget;
+                    setNewCharacterForm((previous) => ({ ...previous, name: value }));
+                  }}
                 />
               </label>
               <label className="flex flex-col gap-1.5 text-sm">
@@ -641,18 +644,20 @@ export function RosterClient() {
                   type="number"
                   step={10}
                   value={newCharacterForm.ilvl}
-                  onChange={(event) =>
-                    setNewCharacterForm((previous) => ({ ...previous, ilvl: Number(event.currentTarget.value) || 0 }))
-                  }
+                  onChange={(event) => {
+                    const { value } = event.currentTarget;
+                    setNewCharacterForm((previous) => ({ ...previous, ilvl: Number(value) || 0 }));
+                  }}
                 />
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={newCharacterForm.weeklyGold}
-                  onChange={(event) =>
-                    setNewCharacterForm((previous) => ({ ...previous, weeklyGold: event.currentTarget.checked }))
-                  }
+                  onChange={(event) => {
+                    const { checked } = event.currentTarget;
+                    setNewCharacterForm((previous) => ({ ...previous, weeklyGold: checked }));
+                  }}
                 />
                 Is Gold Earner?
               </label>
@@ -691,7 +696,10 @@ export function RosterClient() {
                 <input
                   className={inputClassName}
                   value={editCharacterForm.name}
-                  onChange={(event) => setEditCharacterForm((previous) => ({ ...previous, name: event.currentTarget.value }))}
+                  onChange={(event) => {
+                    const { value } = event.currentTarget;
+                    setEditCharacterForm((previous) => ({ ...previous, name: value }));
+                  }}
                 />
               </label>
               <label className="flex flex-col gap-1.5 text-sm">
@@ -708,18 +716,20 @@ export function RosterClient() {
                   type="number"
                   step={10}
                   value={editCharacterForm.ilvl}
-                  onChange={(event) =>
-                    setEditCharacterForm((previous) => ({ ...previous, ilvl: Number(event.currentTarget.value) || 0 }))
-                  }
+                  onChange={(event) => {
+                    const { value } = event.currentTarget;
+                    setEditCharacterForm((previous) => ({ ...previous, ilvl: Number(value) || 0 }));
+                  }}
                 />
               </label>
               <label className="flex items-center gap-2 text-sm md:col-span-2">
                 <input
                   type="checkbox"
                   checked={editCharacterForm.weeklyGold}
-                  onChange={(event) =>
-                    setEditCharacterForm((previous) => ({ ...previous, weeklyGold: event.currentTarget.checked }))
-                  }
+                  onChange={(event) => {
+                    const { checked } = event.currentTarget;
+                    setEditCharacterForm((previous) => ({ ...previous, weeklyGold: checked }));
+                  }}
                 />
                 Is Gold Earner?
               </label>
