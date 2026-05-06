@@ -318,7 +318,7 @@ export function ChecklistClient() {
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-[oklch(0.7_0_0)]">{entry.character.class}</p>
                           <p className="truncate text-lg font-semibold">{entry.character.name}</p>
-                          <p className="mt-1 text-sm text-[oklch(0.7_0_0)]">⚔ iLvl {entry.character.ilvl}</p>
+                          <p className="mt-0.5 text-sm text-[oklch(0.7_0_0)]">⚔ iLvl {entry.character.ilvl}</p>
                         </div>
                       </div>
 

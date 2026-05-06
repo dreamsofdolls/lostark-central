@@ -465,7 +465,7 @@ export function RosterClient() {
                       <div className="min-w-0">
                         <p className="truncate text-xs text-[oklch(0.7_0_0)]">{entry.character.class}</p>
                         <p className="truncate text-lg font-semibold leading-6 text-white">{entry.character.name}</p>
-                        <p className="mt-1 text-sm text-[oklch(0.7_0_0)]">⚔ {entry.character.ilvl}</p>
+                        <p className="mt-0.5 text-sm text-[oklch(0.7_0_0)]">⚔ {entry.character.ilvl}</p>
                       </div>
                     </div>
                     <button
