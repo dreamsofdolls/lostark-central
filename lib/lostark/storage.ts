@@ -1,7 +1,15 @@
 import { defaultTasks } from "@/lib/lostark/defaultTasks";
 import { normalizeClassName } from "@/lib/lostark/classes";
 import {
+  RaidKey,
+  getRaidDisplayName,
+  getRaidGateList,
+  inferRaidKeyFromName,
+  normalizeRaidModeKey
+} from "@/lib/lostark/raids";
+import {
   Character,
+  CharacterRaidGate,
   CharacterRaid,
   CompletionMap,
   LostarkTask,
@@ -80,14 +88,42 @@ export function readRosterState(): RosterState {
               return null;
             }
             const raidRaw = raid as Partial<CharacterRaid>;
-            const name = String(raidRaw.name ?? "").trim();
-            if (!name) {
+            const raidName = String(raidRaw.name ?? "").trim();
+            const raidKeyRaw = String((raidRaw as { raidKey?: unknown }).raidKey ?? "").trim().toLowerCase();
+            const raidKey = (raidKeyRaw || inferRaidKeyFromName(raidName)) as RaidKey | null;
+            if (!raidKey) {
               return null;
             }
+            const gates = Array.isArray(raidRaw.gates)
+              ? raidRaw.gates
+                  .map((gate): CharacterRaidGate | null => {
+                    if (!gate || typeof gate !== "object") {
+                      return null;
+                    }
+                    const gateRaw = gate as Partial<CharacterRaidGate>;
+                    const gateName = String(gateRaw.gate ?? "").trim();
+                    if (!gateName) {
+                      return null;
+                    }
+                    return {
+                      gate: gateName,
+                      difficulty: normalizeRaidModeKey(gateRaw.difficulty, raidKey)
+                    };
+                  })
+                  .filter((gate): gate is CharacterRaidGate => Boolean(gate))
+              : [];
+            const normalizedGates =
+              gates.length > 0
+                ? gates
+                : getRaidGateList(raidKey).map((gate) => ({
+                    gate,
+                    difficulty: normalizeRaidModeKey((raidRaw as { difficulty?: unknown }).difficulty, raidKey)
+                  }));
             return {
               id: String(raidRaw.id ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`),
-              name,
-              difficulty: String(raidRaw.difficulty ?? "N").trim() || "N"
+              raidKey,
+              name: raidName || getRaidDisplayName(raidKey),
+              gates: normalizedGates
             };
           })
           .filter((raid): raid is CharacterRaid => Boolean(raid))

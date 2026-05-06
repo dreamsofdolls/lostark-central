@@ -1,3 +1,5 @@
+import type { RaidKey } from "@/lib/lostark/raids";
+
 export type TaskFrequency =
   | "DAILY"
   | "WEEKLY"
@@ -30,10 +32,16 @@ export type Character = {
   raids?: CharacterRaid[];
 };
 
+export type CharacterRaidGate = {
+  gate: string;
+  difficulty: string;
+};
+
 export type CharacterRaid = {
   id: string;
+  raidKey: RaidKey;
   name: string;
-  difficulty: string;
+  gates: CharacterRaidGate[];
 };
 
 export type RosterAccount = {

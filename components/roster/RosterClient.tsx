@@ -4,8 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_CLASS_NAME, normalizeClassName } from "@/lib/lostark/classes";
 import { ClassDropdown } from "@/components/ClassDropdown";
 import { ClassIcon } from "@/components/Icon";
-import { Character, CharacterRaid, RosterAccount, RosterState } from "@/lib/lostark/types";
+import { ButtonDropdown, ButtonDropdownOption } from "@/components/ButtonDropdown";
+import { Character, CharacterRaid, CharacterRaidGate, RosterAccount, RosterState } from "@/lib/lostark/types";
 import { defaultRosterState, readRosterState, writeRosterState } from "@/lib/lostark/storage";
+import {
+  RaidKey,
+  getRaidDisplayName,
+  getRaidGateList,
+  getRaidKeys,
+  getRaidModeOptions,
+  normalizeRaidModeKey
+} from "@/lib/lostark/raids";
 
 type CharacterRef = {
   accountName: string;
@@ -23,11 +32,9 @@ type RaidMenuTarget = CharacterRef & {
 type EditRaidState = CharacterRef & {
   raidId: string;
   raidName: string;
-  difficulty: string;
+  raidKey: RaidKey;
+  gates: CharacterRaidGate[];
 };
-
-const RAID_OPTIONS = ["Act 3: Mordum", "Act 4: Armoche", "Final Act: Kazeros"] as const;
-const DIFFICULTY_OPTIONS = ["N", "H", "NN", "HH", "HHH"] as const;
 
 const emptyCharacter: Character = {
   name: "",
@@ -37,8 +44,6 @@ const emptyCharacter: Character = {
   raids: []
 };
 
-const selectClassName =
-  "rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30";
 const inputClassName =
   "rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30";
 const primaryButtonClass =
@@ -47,15 +52,6 @@ const secondaryButtonClass =
   "rounded-lg bg-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-60";
 const dangerButtonClass =
   "rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60";
-const selectWithChevronClass = `${selectClassName} appearance-none pr-9`;
-
-function ChevronIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className={className ?? "h-4 w-4 text-zinc-400"} aria-hidden="true">
-      <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 function CloseIcon() {
   return (
@@ -114,6 +110,15 @@ function createRaidId() {
   return `raid-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
+function buildDefaultRaidGates(raidKey: RaidKey): CharacterRaidGate[] {
+  const modeOptions = getRaidModeOptions(raidKey);
+  const defaultMode = modeOptions[0]?.value ?? "normal";
+  return getRaidGateList(raidKey).map((gate) => ({
+    gate,
+    difficulty: defaultMode
+  }));
+}
+
 export function RosterClient() {
   const [roster, setRoster] = useState<RosterState>(defaultRosterState);
   const [newAccountName, setNewAccountName] = useState("");
@@ -130,8 +135,8 @@ export function RosterClient() {
   const [raidMenuTarget, setRaidMenuTarget] = useState<RaidMenuTarget | null>(null);
 
   const [addRaidRef, setAddRaidRef] = useState<CharacterRef | null>(null);
-  const [newRaidName, setNewRaidName] = useState<string>(RAID_OPTIONS[0]);
-  const [newRaidDifficulty, setNewRaidDifficulty] = useState<string>(DIFFICULTY_OPTIONS[2]);
+  const [newRaidKey, setNewRaidKey] = useState<RaidKey | "">("");
+  const [newRaidGates, setNewRaidGates] = useState<CharacterRaidGate[]>([]);
 
   const [editRaidState, setEditRaidState] = useState<EditRaidState | null>(null);
 
@@ -157,6 +162,24 @@ export function RosterClient() {
           character
         }))
       ),
+    [roster.accounts]
+  );
+
+  const raidOptions = useMemo<ButtonDropdownOption[]>(
+    () =>
+      getRaidKeys().map((raidKey) => ({
+        value: raidKey,
+        label: getRaidDisplayName(raidKey)
+      })),
+    []
+  );
+
+  const accountOptions = useMemo<ButtonDropdownOption[]>(
+    () =>
+      roster.accounts.map((account) => ({
+        value: account.accountName,
+        label: account.accountName
+      })),
     [roster.accounts]
   );
 
@@ -292,23 +315,39 @@ export function RosterClient() {
 
   function openAddRaidModal(ref: CharacterRef) {
     setAddRaidRef(ref);
-    setNewRaidName(RAID_OPTIONS[0]);
-    setNewRaidDifficulty(DIFFICULTY_OPTIONS[2]);
+    setNewRaidKey("");
+    setNewRaidGates([]);
     setRaidMenuTarget(null);
   }
 
-  function confirmAddRaid() {
-    if (!addRaidRef) {
+  function onSelectRaidForAdd(value: string) {
+    const raidKey = value as RaidKey;
+    setNewRaidKey(raidKey);
+    setNewRaidGates(buildDefaultRaidGates(raidKey));
+  }
+
+  function changeAddRaidGateDifficulty(gateName: string, difficulty: string) {
+    if (!newRaidKey) {
       return;
     }
-    const raidName = newRaidName.trim();
-    if (!raidName) {
+    setNewRaidGates((previous) =>
+      previous.map((gate) =>
+        gate.gate === gateName
+          ? { ...gate, difficulty: normalizeRaidModeKey(difficulty, newRaidKey) }
+          : gate
+      )
+    );
+  }
+
+  function confirmAddRaid() {
+    if (!addRaidRef || !newRaidKey) {
       return;
     }
     const raid: CharacterRaid = {
       id: createRaidId(),
-      name: raidName,
-      difficulty: newRaidDifficulty
+      raidKey: newRaidKey,
+      name: getRaidDisplayName(newRaidKey),
+      gates: newRaidGates.length > 0 ? newRaidGates : buildDefaultRaidGates(newRaidKey)
     };
     updateCharacterAt(addRaidRef, (character) => ({
       ...character,
@@ -318,13 +357,31 @@ export function RosterClient() {
   }
 
   function openEditRaidModal(ref: CharacterRef, raid: CharacterRaid) {
+    const gates = Array.isArray(raid.gates) && raid.gates.length > 0 ? raid.gates : buildDefaultRaidGates(raid.raidKey);
     setEditRaidState({
       ...ref,
       raidId: raid.id,
       raidName: raid.name,
-      difficulty: raid.difficulty
+      raidKey: raid.raidKey,
+      gates
     });
     setRaidMenuTarget(null);
+  }
+
+  function changeEditRaidGateDifficulty(gateName: string, difficulty: string) {
+    setEditRaidState((previous) => {
+      if (!previous) {
+        return previous;
+      }
+      return {
+        ...previous,
+        gates: previous.gates.map((gate) =>
+          gate.gate === gateName
+            ? { ...gate, difficulty: normalizeRaidModeKey(difficulty, previous.raidKey) }
+            : gate
+        )
+      };
+    });
   }
 
   function confirmEditRaid() {
@@ -334,7 +391,9 @@ export function RosterClient() {
     updateCharacterAt(editRaidState, (character) => ({
       ...character,
       raids: (character.raids ?? []).map((raid) =>
-        raid.id === editRaidState.raidId ? { ...raid, difficulty: editRaidState.difficulty } : raid
+        raid.id === editRaidState.raidId
+          ? { ...raid, gates: editRaidState.gates }
+          : raid
       )
     }));
     setEditRaidState(null);
@@ -346,6 +405,13 @@ export function RosterClient() {
       raids: (character.raids ?? []).filter((raid) => raid.id !== raidId)
     }));
     setRaidMenuTarget(null);
+  }
+
+  function formatRaidGateSummary(raid: CharacterRaid): string {
+    const modeMap = Object.fromEntries(getRaidModeOptions(raid.raidKey).map((item) => [item.value, item.label]));
+    return (raid.gates ?? [])
+      .map((gate) => `${gate.gate} ${modeMap[gate.difficulty] ?? gate.difficulty}`)
+      .join(" • ");
   }
 
   return (
@@ -366,6 +432,18 @@ export function RosterClient() {
           </button>
         </div>
       </div>
+
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
+        <h2 className="mb-3 text-lg font-semibold">Accounts</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {roster.accounts.map((account) => (
+            <article key={account.accountName} className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+              <p className="truncate text-sm font-semibold text-zinc-100">{account.accountName}</p>
+              <p className="mt-1 text-xs text-zinc-400">Characters: {account.characters.length}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 shadow-xl">
         {characterEntries.length === 0 ? (
@@ -389,6 +467,7 @@ export function RosterClient() {
                         <ClassIcon className={entry.character.class} size="lg" />
                       </div>
                       <div className="min-w-0">
+                        <p className="truncate text-xs text-zinc-400">{entry.accountName}</p>
                         <p className="truncate text-sm text-zinc-300">{entry.character.class}</p>
                         <p className="truncate text-xl font-semibold leading-6 text-white">{entry.character.name}</p>
                         <p className="mt-1 text-xs text-zinc-400">⚔ {entry.character.ilvl}</p>
@@ -434,7 +513,7 @@ export function RosterClient() {
                             <div key={raid.id} className="relative px-4 py-3">
                               <div className="pr-10">
                                 <p className="truncate text-xl text-white">{raid.name}</p>
-                                <p className="mt-1 text-sm text-zinc-400">{raid.difficulty}</p>
+                                <p className="mt-1 text-sm text-zinc-400">{formatRaidGateSummary(raid)}</p>
                               </div>
                               <button
                                 type="button"
@@ -540,22 +619,7 @@ export function RosterClient() {
             <div className="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-sm">
                 Account
-                <div className="relative">
-                  <select
-                    className={selectWithChevronClass}
-                    value={addCharacterAccount}
-                    onChange={(event) => setAddCharacterAccount(event.currentTarget.value)}
-                  >
-                    {roster.accounts.map((account) => (
-                      <option key={account.accountName} value={account.accountName}>
-                        {account.accountName}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                    <ChevronIcon />
-                  </span>
-                </div>
+                <ButtonDropdown value={addCharacterAccount} options={accountOptions} onChange={setAddCharacterAccount} />
               </label>
               <label className="flex flex-col gap-1.5 text-sm">
                 Name
@@ -699,45 +763,33 @@ export function RosterClient() {
             <h2 className="text-lg font-semibold">Add Raid</h2>
             <div className="mt-4 space-y-3">
               <label className="flex flex-col gap-1.5 text-sm">
-                Raid
-                <div className="relative">
-                  <select className={selectWithChevronClass} value={newRaidName} onChange={(event) => setNewRaidName(event.currentTarget.value)}>
-                    {RAID_OPTIONS.map((raidName) => (
-                      <option key={raidName} value={raidName}>
-                        {raidName}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                    <ChevronIcon />
-                  </span>
-                </div>
+                Select the Raid
+                <ButtonDropdown value={newRaidKey} options={raidOptions} onChange={onSelectRaidForAdd} placeholder="Select the Raid" />
               </label>
-              <label className="flex flex-col gap-1.5 text-sm">
-                Difficulty
-                <div className="relative">
-                  <select
-                    className={selectWithChevronClass}
-                    value={newRaidDifficulty}
-                    onChange={(event) => setNewRaidDifficulty(event.currentTarget.value)}
-                  >
-                    {DIFFICULTY_OPTIONS.map((difficulty) => (
-                      <option key={difficulty} value={difficulty}>
-                        {difficulty}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                    <ChevronIcon />
-                  </span>
+
+              {newRaidKey ? (
+                <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+                  <p className="text-xs text-zinc-400">
+                    Gates: {getRaidGateList(newRaidKey).length}
+                  </p>
+                  {newRaidGates.map((gate) => (
+                    <label key={gate.gate} className="flex flex-col gap-1.5 text-sm">
+                      {gate.gate} difficulty
+                      <ButtonDropdown
+                        value={gate.difficulty}
+                        options={getRaidModeOptions(newRaidKey)}
+                        onChange={(value) => changeAddRaidGateDifficulty(gate.gate, value)}
+                      />
+                    </label>
+                  ))}
                 </div>
-              </label>
+              ) : null}
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" className={secondaryButtonClass} onClick={() => setAddRaidRef(null)}>
                 Cancel
               </button>
-              <button type="button" className={primaryButtonClass} onClick={confirmAddRaid}>
+              <button type="button" className={primaryButtonClass} onClick={confirmAddRaid} disabled={!newRaidKey}>
                 Confirm
               </button>
             </div>
@@ -761,25 +813,18 @@ export function RosterClient() {
             </button>
             <h2 className="text-lg font-semibold">Edit Raid Difficulty</h2>
             <p className="mt-2 text-sm text-zinc-400">{editRaidState.raidName}</p>
-            <label className="mt-4 flex flex-col gap-1.5 text-sm">
-              Difficulty
-              <div className="relative">
-                <select
-                  className={selectWithChevronClass}
-                  value={editRaidState.difficulty}
-                  onChange={(event) => setEditRaidState((previous) => (previous ? { ...previous, difficulty: event.currentTarget.value } : previous))}
-                >
-                  {DIFFICULTY_OPTIONS.map((difficulty) => (
-                    <option key={difficulty} value={difficulty}>
-                      {difficulty}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                  <ChevronIcon />
-                </span>
-              </div>
-            </label>
+            <div className="mt-4 space-y-3">
+              {editRaidState.gates.map((gate) => (
+                <label key={gate.gate} className="flex flex-col gap-1.5 text-sm">
+                  {gate.gate} difficulty
+                  <ButtonDropdown
+                    value={gate.difficulty}
+                    options={getRaidModeOptions(editRaidState.raidKey)}
+                    onChange={(value) => changeEditRaidGateDifficulty(gate.gate, value)}
+                  />
+                </label>
+              ))}
+            </div>
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" className={secondaryButtonClass} onClick={() => setEditRaidState(null)}>
                 Cancel
