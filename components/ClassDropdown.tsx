@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CLASS_OPTIONS, normalizeClassName } from "@/lib/lostark/classes";
 import { ClassIcon } from "@/components/Icon";
 
@@ -14,6 +14,10 @@ export function ClassDropdown({ value, onChange, className }: ClassDropdownProps
   const normalized = normalizeClassName(value);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sortedClassOptions = useMemo(
+    () => [...CLASS_OPTIONS].sort((a, b) => a.localeCompare(b)),
+    []
+  );
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -52,7 +56,7 @@ export function ClassDropdown({ value, onChange, className }: ClassDropdownProps
       {isOpen && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-zinc-700 bg-zinc-900 shadow-lg">
           <div className="max-h-64 overflow-y-auto">
-            {CLASS_OPTIONS.map((classOption) => (
+            {sortedClassOptions.map((classOption) => (
               <button
                 key={classOption}
                 type="button"

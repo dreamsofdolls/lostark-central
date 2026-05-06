@@ -444,7 +444,7 @@ export function RosterClient() {
               <h2 className="text-lg font-semibold">{account.accountName}</h2>
             </div>
             <div className="p-5">
-              <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
                 {account.characters.map((character, index) => {
                   const entry: CharacterEntry = { accountName: account.accountName, index, character };
               const raids = entry.character.raids ?? [];
