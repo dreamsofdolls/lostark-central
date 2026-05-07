@@ -7,6 +7,7 @@ import { ClassIcon } from "@/components/Icon";
 import { ButtonDropdown, ButtonDropdownOption } from "@/components/ButtonDropdown";
 import { Character, CharacterRaid, CharacterRaidGate, RosterAccount, RosterState } from "@/lib/lostark/types";
 import { defaultRosterState, readRosterState, writeRosterState } from "@/lib/lostark/storage";
+import { SIDE_TASK_NAMES, normalizeSideTaskName } from "@/lib/lostark/sideTasks";
 import {
   RaidKey,
   getRaidDisplayName,
@@ -36,12 +37,17 @@ type EditRaidState = CharacterRef & {
   gates: CharacterRaidGate[];
 };
 
+type TaskMenuTarget = CharacterRef & {
+  taskName: string;
+};
+
 const emptyCharacter: Character = {
   name: "",
   class: DEFAULT_CLASS_NAME,
   ilvl: 1540,
   weeklyGold: true,
-  raids: []
+  raids: [],
+  sideTasks: [...SIDE_TASK_NAMES]
 };
 
 const inputClassName =
@@ -133,12 +139,15 @@ export function RosterClient() {
 
   const [activeTabs, setActiveTabs] = useState<Record<string, "raids" | "tasks">>({});
   const [raidMenuTarget, setRaidMenuTarget] = useState<RaidMenuTarget | null>(null);
+  const [taskMenuTarget, setTaskMenuTarget] = useState<TaskMenuTarget | null>(null);
 
   const [addRaidRef, setAddRaidRef] = useState<CharacterRef | null>(null);
   const [newRaidKey, setNewRaidKey] = useState<RaidKey | "">("");
   const [newRaidGates, setNewRaidGates] = useState<CharacterRaidGate[]>([]);
 
   const [editRaidState, setEditRaidState] = useState<EditRaidState | null>(null);
+  const [addTaskRef, setAddTaskRef] = useState<CharacterRef | null>(null);
+  const [newTaskName, setNewTaskName] = useState("");
 
   useEffect(() => {
     const saved = readRosterState();
@@ -264,7 +273,8 @@ export function RosterClient() {
       ...newCharacterForm,
       name: normalizedName,
       class: normalizeClassName(newCharacterForm.class),
-      raids: Array.isArray(newCharacterForm.raids) ? newCharacterForm.raids : []
+      raids: Array.isArray(newCharacterForm.raids) ? newCharacterForm.raids : [],
+      sideTasks: Array.isArray(newCharacterForm.sideTasks) ? newCharacterForm.sideTasks : [...SIDE_TASK_NAMES]
     };
     const nextAccounts = roster.accounts.map((account, idx) =>
       idx === accountIndex
@@ -291,7 +301,8 @@ export function RosterClient() {
     setEditCharacterRef(ref);
     setEditCharacterForm({
       ...found,
-      raids: Array.isArray(found.raids) ? found.raids : []
+      raids: Array.isArray(found.raids) ? found.raids : [],
+      sideTasks: Array.isArray(found.sideTasks) ? found.sideTasks : [...SIDE_TASK_NAMES]
     });
   }
 
@@ -308,7 +319,8 @@ export function RosterClient() {
       ...editCharacterForm,
       name: normalizedName,
       class: normalizeClassName(editCharacterForm.class),
-      raids: Array.isArray(editCharacterForm.raids) ? editCharacterForm.raids : current.raids ?? []
+      raids: Array.isArray(editCharacterForm.raids) ? editCharacterForm.raids : current.raids ?? [],
+      sideTasks: Array.isArray(editCharacterForm.sideTasks) ? editCharacterForm.sideTasks : current.sideTasks ?? [...SIDE_TASK_NAMES]
     }));
     setEditCharacterRef(null);
   }
@@ -407,6 +419,54 @@ export function RosterClient() {
     setRaidMenuTarget(null);
   }
 
+  function getCharacterSideTasks(character: Character): string[] {
+    const selected = Array.isArray(character.sideTasks) ? character.sideTasks : [...SIDE_TASK_NAMES];
+    return SIDE_TASK_NAMES.filter((name) =>
+      selected.some((value) => normalizeSideTaskName(value) === normalizeSideTaskName(name))
+    );
+  }
+
+  function openAddTaskModal(ref: CharacterRef) {
+    const character = findCharacter(ref);
+    if (!character) {
+      return;
+    }
+    const selected = getCharacterSideTasks(character);
+    const nextTask = SIDE_TASK_NAMES.find(
+      (taskName) => !selected.some((value) => normalizeSideTaskName(value) === normalizeSideTaskName(taskName))
+    );
+    setAddTaskRef(ref);
+    setNewTaskName(nextTask ?? "");
+    setTaskMenuTarget(null);
+  }
+
+  function confirmAddTask() {
+    if (!addTaskRef || !newTaskName) {
+      return;
+    }
+    updateCharacterAt(addTaskRef, (character) => {
+      const selected = getCharacterSideTasks(character);
+      if (selected.some((value) => normalizeSideTaskName(value) === normalizeSideTaskName(newTaskName))) {
+        return character;
+      }
+      return {
+        ...character,
+        sideTasks: [...selected, newTaskName]
+      };
+    });
+    setAddTaskRef(null);
+  }
+
+  function removeTaskSelection(ref: CharacterRef, taskName: string) {
+    updateCharacterAt(ref, (character) => ({
+      ...character,
+      sideTasks: getCharacterSideTasks(character).filter(
+        (value) => normalizeSideTaskName(value) !== normalizeSideTaskName(taskName)
+      )
+    }));
+    setTaskMenuTarget(null);
+  }
+
   function formatRaidGateSummary(raid: CharacterRaid): string {
     const modeMap = Object.fromEntries(getRaidModeOptions(raid.raidKey).map((item) => [item.value, item.label]));
     return (raid.gates ?? [])
@@ -415,7 +475,13 @@ export function RosterClient() {
   }
 
   return (
-    <div className="space-y-4" onClick={() => setRaidMenuTarget(null)}>
+    <div
+      className="space-y-4"
+      onClick={() => {
+        setRaidMenuTarget(null);
+        setTaskMenuTarget(null);
+      }}
+    >
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Roster</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -448,6 +514,7 @@ export function RosterClient() {
                 {account.characters.map((character, index) => {
                   const entry: CharacterEntry = { accountName: account.accountName, index, character };
               const raids = entry.character.raids ?? [];
+              const sideTasks = getCharacterSideTasks(entry.character);
               const key = `${entry.accountName}:${entry.character.name}:${entry.index}`;
               const activeTab = activeTabs[key] ?? "raids";
               const isTaskTab = activeTab === "tasks";
@@ -490,12 +557,62 @@ export function RosterClient() {
                       className={`px-3 py-2 transition ${isTaskTab ? "bg-zinc-800/60 text-white" : "text-zinc-400 hover:text-white"}`}
                       onClick={() => setActiveTabs((previous) => ({ ...previous, [key]: "tasks" }))}
                     >
-                      Tasks (0)
+                      Tasks ({sideTasks.length})
                     </button>
                   </div>
 
                   {isTaskTab ? (
-                    <div className="p-4 text-sm text-zinc-400">No tasks assigned.</div>
+                    <>
+                      <div className="divide-y divide-[oklch(0.38_0.02_260)]">
+                        {sideTasks.map((taskName) => {
+                          const menuOpen =
+                            taskMenuTarget?.accountName === entry.accountName &&
+                            taskMenuTarget.index === entry.index &&
+                            normalizeSideTaskName(taskMenuTarget.taskName) === normalizeSideTaskName(taskName);
+                          return (
+                            <div key={taskName} className="relative px-4 py-3">
+                              <div className="pr-10">
+                                <p className="truncate text-base text-white">{taskName}</p>
+                              </div>
+                              <button
+                                type="button"
+                                className="absolute right-3 top-2 rounded-md p-1 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setTaskMenuTarget(
+                                    menuOpen ? null : { accountName: entry.accountName, index: entry.index, taskName }
+                                  );
+                                  setRaidMenuTarget(null);
+                                }}
+                              >
+                                <DotsIcon />
+                              </button>
+                              {menuOpen ? (
+                                <div className="absolute right-3 top-9 z-20 w-32 rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl">
+                                  <button
+                                    type="button"
+                                    className="block w-full px-3 py-2 text-left text-sm text-rose-300 transition hover:bg-zinc-800"
+                                    onClick={() => removeTaskSelection(entry, taskName)}
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                        {sideTasks.length === 0 ? <p className="px-4 py-3 text-sm text-zinc-500">No tasks selected.</p> : null}
+                      </div>
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-center gap-2 border-t border-[oklch(0.38_0.02_260)] py-3 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-800/40 hover:text-white"
+                        onClick={() => openAddTaskModal(entry)}
+                        disabled={sideTasks.length >= SIDE_TASK_NAMES.length}
+                      >
+                        <PlusIcon />
+                        Add Task
+                      </button>
+                    </>
                   ) : (
                     <>
                       <div className="divide-y divide-[oklch(0.38_0.02_260)]">
@@ -515,6 +632,7 @@ export function RosterClient() {
                                 className="absolute right-3 top-3 rounded-md p-1 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                                 onClick={(event) => {
                                   event.stopPropagation();
+                                  setTaskMenuTarget(null);
                                   setRaidMenuTarget(menuOpen ? null : { accountName: entry.accountName, index: entry.index, raidId: raid.id });
                                 }}
                               >
@@ -797,6 +915,55 @@ export function RosterClient() {
                 Cancel
               </button>
               <button type="button" className={primaryButtonClass} onClick={confirmAddRaid} disabled={!newRaidKey}>
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {addTaskRef ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4" onClick={() => setAddTaskRef(null)}>
+          <div
+            className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Dismiss add task dialog"
+              className="absolute right-3 top-3 rounded-md p-1 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+              onClick={() => setAddTaskRef(null)}
+            >
+              <CloseIcon />
+            </button>
+            <h2 className="text-lg font-semibold">Add Task</h2>
+            <div className="mt-4 space-y-3">
+              <label className="flex flex-col gap-1.5 text-sm">
+                Select the Task
+                <ButtonDropdown
+                  value={newTaskName}
+                  options={
+                    (() => {
+                      const character = findCharacter(addTaskRef);
+                      const selected = character ? getCharacterSideTasks(character) : [];
+                      return SIDE_TASK_NAMES
+                        .filter(
+                          (taskName) =>
+                            !selected.some((value) => normalizeSideTaskName(value) === normalizeSideTaskName(taskName))
+                        )
+                        .map((taskName) => ({ value: taskName, label: taskName }));
+                    })()
+                  }
+                  onChange={setNewTaskName}
+                  placeholder="Select the Task"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" className={secondaryButtonClass} onClick={() => setAddTaskRef(null)}>
+                Cancel
+              </button>
+              <button type="button" className={primaryButtonClass} onClick={confirmAddTask} disabled={!newTaskName}>
                 Confirm
               </button>
             </div>

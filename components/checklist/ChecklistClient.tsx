@@ -3,7 +3,7 @@
 import { MouseEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ClassIcon } from "@/components/Icon";
-import { isSideTask } from "@/lib/lostark/sideTasks";
+import { SIDE_TASK_NAMES, isSideTask, normalizeSideTaskName } from "@/lib/lostark/sideTasks";
 import { Character, CompletionMap, LostarkTask, SettingsState } from "@/lib/lostark/types";
 import {
   defaultRosterState,
@@ -73,6 +73,23 @@ function getBucket(task: LostarkTask): TaskBucket {
   return "tasks";
 }
 
+function normalizeLabel(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function isRaidTaskMatched(taskLabel: string, selectedRaidLabels: string[]): boolean {
+  const normalizedTask = normalizeLabel(taskLabel);
+  return selectedRaidLabels.some((selectedLabel) => {
+    const normalizedSelected = normalizeLabel(selectedLabel);
+    return normalizedTask === normalizedSelected || normalizedTask.includes(normalizedSelected) || normalizedSelected.includes(normalizedTask);
+  });
+}
+
+function isSideTaskMatched(taskLabel: string, selectedSideTasks: string[]): boolean {
+  const normalizedTask = normalizeSideTaskName(taskLabel);
+  return selectedSideTasks.some((selected) => normalizeSideTaskName(selected) === normalizedTask);
+}
+
 export function ChecklistClient() {
   const [roster, setRoster] = useState(defaultRosterState);
   const [completion, setCompletion] = useState<CompletionMap>({});
@@ -117,9 +134,21 @@ export function ChecklistClient() {
     return roster.accounts.map((account) => {
       const characters = account.characters.map((character, characterIndex) => {
         const rows: TaskRow[] = [];
+        const selectedRaidLabels = (character.raids ?? []).map((raid) => raid.name);
+        const selectedSideTasks = Array.isArray(character.sideTasks)
+          ? SIDE_TASK_NAMES.filter((name) =>
+              character.sideTasks?.some((selected) => normalizeSideTaskName(selected) === normalizeSideTaskName(name))
+            )
+          : [...SIDE_TASK_NAMES];
         for (const task of characterTasks) {
           const tracked = settings.taskTracking[getTrackingEntryKey(account.accountName, character.name, task.id)] !== false;
           if (!tracked) {
+            continue;
+          }
+          if (getBucket(task) === "tasks" && isSideTask(task) && !isSideTaskMatched(task.label, selectedSideTasks)) {
+            continue;
+          }
+          if (getBucket(task) === "raids" && selectedRaidLabels.length > 0 && !isRaidTaskMatched(task.label, selectedRaidLabels)) {
             continue;
           }
           const doable = character.ilvl >= task.minIlvl && character.ilvl < (task.maxIlvl ?? Number.POSITIVE_INFINITY);

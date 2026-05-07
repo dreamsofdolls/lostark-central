@@ -46,6 +46,7 @@ Phase 1 migration tu `Lostark-helper-master` (Angular/Nx) sang Next.js de deploy
   - Dong bo `accounts.characters.sideTasks` cho 3 task: `Solo Shop`, `Paradise`, `Howl's Hourglass` de dung chung format voi raid-bot.
   - Dong bo `accounts.characters.isGoldEarner` + `accounts.characters.assignedRaids` tu roster web de nhat quan voi raid-bot khi dung chung MongoDB.
   - `lib/lostark/raids.ts` mirror theo `lostark-manage-raid-bot/bot/models/Raid.js` de giu chung raid options/gates/mode.
+  - `Manage Roster` co the chon side tasks theo character tu `lib/lostark/sideTasks.ts`; checklist se loc theo danh sach da chon.
 
 Env can thiet:
 

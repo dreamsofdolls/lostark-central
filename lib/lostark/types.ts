@@ -30,6 +30,7 @@ export type Character = {
   weeklyGold: boolean;
   note?: string;
   raids?: CharacterRaid[];
+  sideTasks?: string[];
 };
 
 export type CharacterRaidGate = {

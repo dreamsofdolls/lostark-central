@@ -9,6 +9,7 @@ import {
   inferRaidKeyFromName,
   normalizeRaidModeKey
 } from "@/lib/lostark/raids";
+import { SIDE_TASK_NAMES, normalizeSideTaskName } from "@/lib/lostark/sideTasks";
 import { connectDB } from "@/lib/mongo/db";
 import { User } from "@/lib/mongo/models/User";
 
@@ -191,12 +192,24 @@ function parseRosterState(input: unknown): RosterState | null {
                     })
                     .filter((raid): raid is CharacterRaid => Boolean(raid))
                 : [];
+              const hasSideTasksField = Array.isArray((raw as { sideTasks?: unknown }).sideTasks);
+              const rawSideTasks = hasSideTasksField
+                ? ((raw as { sideTasks?: unknown }).sideTasks as unknown[])
+                    .map((taskName) => String(taskName ?? "").trim())
+                    .filter((taskName) => taskName.length > 0)
+                : [];
+              const normalizedSideTasks = hasSideTasksField
+                ? SIDE_TASK_NAMES.filter((taskName) =>
+                    rawSideTasks.some((value) => normalizeSideTaskName(value) === normalizeSideTaskName(taskName))
+                  )
+                : [...SIDE_TASK_NAMES];
               const normalizedCharacter: Character = {
                 name,
                 class: String(raw.class ?? "").trim(),
                 ilvl: Number(raw.ilvl ?? 0),
                 weeklyGold: Boolean(raw.weeklyGold),
                 raids,
+                sideTasks: normalizedSideTasks,
                 ...(typeof raw.note === "string" ? { note: raw.note } : {})
               };
               return normalizedCharacter;

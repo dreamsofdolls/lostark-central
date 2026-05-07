@@ -1,6 +1,6 @@
 import { LostarkTask } from "@/lib/lostark/types";
 
-const SIDE_TASK_NAMES = ["Solo Shop", "Paradise", "Howl's Hourglass"] as const;
+export const SIDE_TASK_NAMES = ["Solo Shop", "Paradise", "Howl's Hourglass"] as const;
 const SIDE_TASK_SET = new Set(SIDE_TASK_NAMES.map((name) => normalizeSideTaskName(name)));
 
 export function normalizeSideTaskName(value: string): string {

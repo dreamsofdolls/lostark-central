@@ -1,5 +1,6 @@
 import { defaultTasks } from "@/lib/lostark/defaultTasks";
 import { normalizeClassName } from "@/lib/lostark/classes";
+import { SIDE_TASK_NAMES, normalizeSideTaskName } from "@/lib/lostark/sideTasks";
 import {
   RaidKey,
   getRaidDisplayName,
@@ -128,13 +129,25 @@ export function readRosterState(): RosterState {
           })
           .filter((raid): raid is CharacterRaid => Boolean(raid))
       : [];
+    const hasSideTasksField = Array.isArray((raw as { sideTasks?: unknown }).sideTasks);
+    const rawSideTasks = hasSideTasksField
+      ? ((raw as { sideTasks?: unknown }).sideTasks as unknown[])
+          .map((taskName) => String(taskName ?? "").trim())
+          .filter((taskName) => taskName.length > 0)
+      : [];
+    const normalizedSideTasks = hasSideTasksField
+      ? SIDE_TASK_NAMES.filter((taskName) =>
+          rawSideTasks.some((value) => normalizeSideTaskName(value) === normalizeSideTaskName(taskName))
+        )
+      : [...SIDE_TASK_NAMES];
     return {
       name: String(raw.name ?? "").trim(),
       class: normalizeClassName(raw.class),
       ilvl: Number(raw.ilvl ?? 0),
       weeklyGold: Boolean(raw.weeklyGold),
       note: typeof raw.note === "string" ? raw.note : undefined,
-      raids
+      raids,
+      sideTasks: normalizedSideTasks
     };
   };
 
